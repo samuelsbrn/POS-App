@@ -11,9 +11,7 @@ class BillingController extends Controller
         $this->response->setContentType('application/json', 'UTF-8');
 
         if (!$this->request->isPost()) {
-            return $this->response->setStatusCode(405)->setJsonContent([
-                'status' => 'error', 'message' => 'Method Not Allowed'
-            ]);
+            return $this->response->setStatusCode(405)->setJsonContent(['status' => 'error', 'message' => 'Method Not Allowed']);
         }
 
         $rawBody = $this->request->getJsonRawBody(true);
@@ -21,26 +19,24 @@ class BillingController extends Controller
         try {
             $this->db->begin();
 
+            // 1. Simpan Header Tagihan
             $billing = new PatientBillings();
-            $billing->patient_id = $rawBody['patient_id'];
-            $billing->billing_number = 'INV-' . time();
+            $billing->patient_id = $rawBody['patient_id'] ?? null; // Null jika Walk-in
+            $billing->billing_number = 'ZC-POS/' . date('Y/m/d') . '/' . rand(1000, 9999); // Sesuai PRP
             $billing->subtotal = $rawBody['subtotal'];
             $billing->tax = $rawBody['tax'];
+            $billing->discount = $rawBody['discount'] ?? 0;
             $billing->total_amount = $rawBody['total_amount'];
             $billing->status = 'Unpaid';
             $billing->created_at = date('Y-m-d H:i:s');
             
             if (!$billing->save()) {
-                $errors = [];
-                foreach ($billing->getMessages() as $message) {
-                    $errors[] = $message->getMessage();
-                }
-                throw new \Exception("Error simpan Nota Utama: " . implode(" | ", $errors));
+                throw new \Exception("Error simpan Nota Utama.");
             }
 
+            // 2. Simpan Detail Item Keranjang & Potong Stok
             foreach ($rawBody['items'] as $item) {
                 $detail = new BillingDetails();
-                
                 $detail->patient_billing_id = $billing->id; 
                 $detail->healthcare_item_id = $item['item_id'];
                 $detail->qty = $item['quantity'];
@@ -48,11 +44,17 @@ class BillingController extends Controller
                 $detail->subtotal = $item['quantity'] * $item['price'];
 
                 if (!$detail->save()) {
-                    $errors = [];
-                    foreach ($detail->getMessages() as $message) {
-                        $errors[] = $message->getMessage();
+                    throw new \Exception("Error simpan Keranjang.");
+                }
+
+                // FITUR PRP: Potong stok otomatis khusus untuk Barang/Obat
+                $itemDb = HealthcareItems::findFirst($item['item_id']);
+                if ($itemDb && $itemDb->category === 'obat') {
+                    if ($itemDb->stock < $item['quantity']) {
+                        throw new \Exception("Stok {$itemDb->name} tidak mencukupi.");
                     }
-                    throw new \Exception("Error simpan Keranjang: " . implode(" | ", $errors));
+                    $itemDb->stock -= $item['quantity'];
+                    $itemDb->save();
                 }
             }
             
@@ -61,16 +63,12 @@ class BillingController extends Controller
             return $this->response->setJsonContent([
                 'status'  => 'success',
                 'message' => 'Transaksi berhasil dibuat!',
-                'invoice' => $billing->billing_number,
                 'billing_id' => $billing->id
             ]);
 
         } catch (\Exception $e) {
             $this->db->rollback();
-            return $this->response->setStatusCode(500)->setJsonContent([
-                'status'  => 'error',
-                'message' => $e->getMessage()
-            ]);
+            return $this->response->setStatusCode(500)->setJsonContent(['status'  => 'error', 'message' => $e->getMessage()]);
         }
     }
 
@@ -82,9 +80,7 @@ class BillingController extends Controller
         $this->response->setContentType('application/json', 'UTF-8');
 
         if (!$this->request->isPost()) {
-            return $this->response->setStatusCode(405)->setJsonContent([
-                'status' => 'error', 'message' => 'Method Not Allowed'
-            ]);
+            return $this->response->setStatusCode(405)->setJsonContent(['status' => 'error', 'message' => 'Method Not Allowed']);
         }
 
         $rawBody = $this->request->getJsonRawBody(true);
@@ -93,151 +89,126 @@ class BillingController extends Controller
             $this->db->begin();
 
             $billing = PatientBillings::findFirst($rawBody['patient_billing_id']);
-            if (!$billing) {
-                throw new \Exception("Data tagihan tidak ditemukan.");
-            }
+            if (!$billing) throw new \Exception("Data tagihan tidak ditemukan.");
+            if ($billing->status === 'Paid') throw new \Exception("Tagihan ini sudah lunas.");
 
-            if ($billing->status === 'Paid') {
-                throw new \Exception("Tagihan ini sudah lunas.");
-            }
-
+            // Catat Pembayaran
             $payment = new BillingPayments();
             $payment->patient_billing_id = $billing->id;
             $payment->payment_method_id = $rawBody['payment_method_id']; 
             $payment->amount_paid = $rawBody['amount_paid'];
+            $payment->change_amount = $rawBody['change_amount'] ?? 0; // Kembalian untuk Tunai
             $payment->payment_date = date('Y-m-d H:i:s');
 
             if (!$payment->save()) {
-                $errors = [];
-                foreach ($payment->getMessages() as $message) {
-                    $errors[] = $message->getMessage();
-                }
-                throw new \Exception("Error simpan data uang masuk: " . implode(" | ", $errors));
+                throw new \Exception("Error simpan data uang masuk.");
             }
 
-            $allPayments = BillingPayments::find([
-                'conditions' => 'patient_billing_id = :billing_id:',
-                'bind'       => ['billing_id' => $billing->id]
-            ]);
-
+            // Hitung akumulasi pembayaran
+            $allPayments = BillingPayments::find(['conditions' => 'patient_billing_id = :id:', 'bind' => ['id' => $billing->id]]);
+            
             $totalPaid = 0;
             foreach ($allPayments as $p) {
                 $totalPaid += $p->amount_paid;
             }
 
+            // Update Status Invoice
             if ($totalPaid >= $billing->total_amount) {
                 $billing->status = 'Paid';
-                if (!$billing->save()) {
-                    throw new \Exception("Gagal mengubah status nota menjadi Lunas.");
-                }
+            } else {
+                $billing->status = 'Partially Paid';
             }
+            
+            $billing->paid_amount = $totalPaid;
+            $billing->save();
 
             $this->db->commit();
 
             return $this->response->setJsonContent([
                 'status'  => 'success',
-                'message' => 'Pembayaran berhasil dicatat!',
-                'total_paid' => $totalPaid,
                 'sisa_tagihan' => max(0, $billing->total_amount - $totalPaid),
                 'payment_status' => $billing->status
             ]);
 
         } catch (\Exception $e) {
             $this->db->rollback();
-            return $this->response->setStatusCode(500)->setJsonContent([
-                'status'  => 'error',
-                'message' => $e->getMessage()
-            ]);
+            return $this->response->setStatusCode(500)->setJsonContent(['status'  => 'error', 'message' => $e->getMessage()]);
         }
     }
 
     // =======================================================
-    // 3. FUNGSI BARU: MENAMPILKAN RIWAYAT & DETAIL INVOICE COMPLETE
+    // 3. FUNGSI RIWAYAT (Mendukung List Tabel & Detail Struk)
     // =======================================================
-    // Endpoint: GET /billing/history?id=7
     public function historyAction()
     {
         $this->response->setContentType('application/json', 'UTF-8');
-
-        // Pastikan request adalah GET
-        if (!$this->request->isGet()) {
-            return $this->response->setStatusCode(405)->setJsonContent([
-                'status' => 'error', 'message' => 'Method Not Allowed'
-            ]);
-        }
-
-        // Ambil ID invoice dari parameter URL (?id=...)
         $billingId = $this->request->getQuery('id');
 
         if (!$billingId) {
-            return $this->response->setStatusCode(400)->setJsonContent([
-                'status' => 'error', 'message' => 'Parameter ID invoice diperlukan.'
-            ]);
-        }
+            // JIKA TANPA ID: Tampilkan daftar semua riwayat untuk Tabel Frontend
+            $billings = PatientBillings::find(['order' => 'created_at DESC']);
+            $list = [];
 
-        // 1. Ambil data Invoice Utama
-        $billing = PatientBillings::findFirst($billingId);
-        if (!$billing) {
-            return $this->response->setStatusCode(404)->setJsonContent([
-                'status' => 'error', 'message' => 'Invoice tidak ditemukan.'
-            ]);
-        }
+            foreach ($billings as $b) {
+                $patientName = 'Walk-in Customer';
+                if ($b->patient_id) {
+                    $patient = Patients::findFirst($b->patient_id);
+                    if ($patient) $patientName = $patient->name;
+                }
 
-        // 2. Ambil Riwayat Keranjang Belanja (Barang/Jasa)
-        $details = BillingDetails::find([
-            'conditions' => 'patient_billing_id = :id:',
-            'bind'       => ['id' => $billing->id]
-        ]);
+                $list[] = [
+                    'id' => $b->id,
+                    'invoice_number' => $b->billing_number,
+                    'created_at' => $b->created_at,
+                    'patient_name' => $patientName,
+                    'total_amount' => $b->total_amount,
+                    'payment_status' => $b->status
+                ];
+            }
+            return $this->response->setJsonContent(['status' => 'success', 'data' => $list]);
+            
+        } else {
+            // JIKA ADA ID: Tampilkan detail lengkap untuk Pop-up Struk Termal
+            $billing = PatientBillings::findFirst($billingId);
+            if (!$billing) return $this->response->setStatusCode(404)->setJsonContent(['status' => 'error', 'message' => 'Invoice tidak ditemukan.']);
 
-        $itemKeranjang = [];
-        foreach ($details as $d) {
-            $itemKeranjang[] = [
-                'healthcare_item_id' => $d->healthcare_item_id,
-                'qty' => $d->qty,
-                'unit_price' => $d->unit_price,
-                'subtotal' => $d->subtotal
-            ];
-        }
+            // Join Nama Pasien
+            $patientName = 'Walk-in Customer';
+            if ($billing->patient_id) {
+                $patient = Patients::findFirst($billing->patient_id);
+                if ($patient) $patientName = $patient->name;
+            }
 
-        // 3. Ambil Riwayat Pembayaran (Mendukung Multi-payment / Split Payment)
-        $payments = BillingPayments::find([
-            'conditions' => 'patient_billing_id = :id:',
-            'bind'       => ['id' => $billing->id]
-        ]);
+            // Join Nama Barang/Jasa
+            $details = BillingDetails::find(['conditions' => 'patient_billing_id = :id:', 'bind' => ['id' => $billing->id]]);
+            $itemKeranjang = [];
+            foreach ($details as $d) {
+                $itemName = 'Item Dihapus';
+                $itemDb = HealthcareItems::findFirst($d->healthcare_item_id);
+                if ($itemDb) $itemName = $itemDb->name;
 
-        $riwayatBayar = [];
-        $totalSelesaiDibayar = 0;
-        foreach ($payments as $p) {
-            $totalSelesaiDibayar += $p->amount_paid;
-            $riwayatBayar[] = [
-                'payment_id' => $p->id,
-                'payment_method_id' => $p->payment_method_id,
-                'amount_paid' => $p->amount_paid,
-                'payment_date' => $p->payment_date
-            ];
-        }
+                $itemKeranjang[] = [
+                    'item_name' => $itemName,
+                    'quantity' => $d->qty,
+                    'price' => $d->unit_price
+                ];
+            }
 
-        // 4. Bungkus semua requirement menjadi satu kesatuan data utuh
-        return $this->response->setJsonContent([
-            'status' => 'success',
-            'data' => [
-                'invoice_info' => [
-                    'billing_id' => $billing->id,
-                    'patient_id' => $billing->patient_id, // Data Customer
-                    'billing_number' => $billing->billing_number,
-                    'subtotal_nota' => $billing->subtotal,
+            return $this->response->setJsonContent([
+                'status' => 'success',
+                'data' => [
+                    'id' => $billing->id,
+                    'invoice_number' => $billing->billing_number,
+                    'created_at' => $billing->created_at,
+                    'patient_name' => $patientName,
+                    'subtotal' => $billing->subtotal,
                     'tax' => $billing->tax,
-                    'total_tagihan' => $billing->total_amount,
-                    'status_pembayaran' => $billing->status,
-                    'tanggal_buat' => $billing->created_at
-                ],
-                'items_purchased' => $itemKeranjang, // Data Barang/Jasa
-                'payment_history' => $riwayatBayar, // Data Split Payment
-                'summary' => [
-                    'total_paid' => $totalSelesaiDibayar,
-                    'remaining_bill' => max(0, $billing->total_amount - $totalSelesaiDibayar)
+                    'discount' => $billing->discount,
+                    'total_amount' => $billing->total_amount,
+                    'payment_status' => $billing->status,
+                    'items' => $itemKeranjang
                 ]
-            ]
-        ]);
+            ]);
+        }
     }
 }
