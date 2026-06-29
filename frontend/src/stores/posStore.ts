@@ -19,7 +19,9 @@ export const usePosStore = defineStore('pos', () => {
       const response = await axios.get('http://localhost:8000/patients')
       patients.value = response.data.data || response.data
       isPatientsLoaded.value = true
-    } catch (error) { console.error('API Error Patients') }
+    } catch (error) { 
+      console.error('API Error Patients') 
+    }
   }
 
   const fetchProducts = async (forceRefresh = false) => {
@@ -28,7 +30,16 @@ export const usePosStore = defineStore('pos', () => {
       const response = await axios.get('http://localhost:8000/healthcare-items')
       products.value = response.data.data || response.data
       isProductsLoaded.value = true
-    } catch (error) { console.error('API Error Products') }
+    } catch (error) { 
+      console.error('API Error Products - Menggunakan Data Lokal Sementara')
+      // Fallback data lokal jika backend belum siap agar aplikasi tidak kosong
+      if (products.value.length === 0) {
+        products.value = [
+          { id: 1, name: 'Konsultasi Dokter Umum', type: 'Jasa', category: 'jasa', price: 100000 },
+          { id: 2, name: 'Obat Paracetamol', type: 'Barang', category: 'obat', price: 15000 }
+        ]
+      }
+    }
   }
 
   const fetchHistory = async (forceRefresh = false) => {
@@ -40,16 +51,12 @@ export const usePosStore = defineStore('pos', () => {
     } catch (error) { console.error('API Error History') }
   }
 
-  // 3. LOGIKA TRANSAKSI TERPUSAT (Agar semua halaman otomatis sinkron)
+  // 3. LOGIKA TRANSAKSI TERPUSAT
   const prosesCheckoutKasir = async (payloadBilling: any) => {
     try {
-      // 1. Tembak API Buat Nota
       const res = await axios.post('http://localhost:8000/billing/create', payloadBilling)
-      
-      // 2. KARENA STOK BERKURANG DI BACKEND, KITA PAKSA REFRESH DATA PRODUK
       await fetchProducts(true)
-      
-      return res.data // Kembalikan data ke Kasir untuk lanjut ke Modal Pembayaran
+      return res.data 
     } catch (error) {
       throw error
     }
@@ -57,12 +64,8 @@ export const usePosStore = defineStore('pos', () => {
 
   const prosesPembayaran = async (payloadPayment: any) => {
     try {
-      // 1. Tembak API Pembayaran
       const res = await axios.post('http://localhost:8000/billing/payment', payloadPayment)
-      
-      // 2. KARENA ADA TRANSAKSI BARU, KITA PAKSA REFRESH DATA RIWAYAT
       await fetchHistory(true)
-      
       return res.data
     } catch (error) {
       throw error

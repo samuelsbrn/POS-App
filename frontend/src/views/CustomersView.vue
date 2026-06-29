@@ -3,9 +3,9 @@ import { ref, onMounted } from 'vue'
 import { usePosStore } from '../stores/posStore'
 import { storeToRefs } from 'pinia'
 
-// 1. Hubungkan ke Store
+// Hubungkan ke Store
 const posStore = usePosStore()
-const { patients } = storeToRefs(posStore) // Menggunakan variabel 'patients'
+const { patients } = storeToRefs(posStore) 
 
 const isLoading = ref(false)
 const showModal = ref(false)
@@ -32,10 +32,13 @@ const saveCustomer = async () => {
       const index = patients.value.findIndex(c => c.id === formData.value.id)
       if (index !== -1) patients.value[index] = { ...formData.value }
     } else {
+      // Push ke global state, PosView akan mendeteksi otomatis!
       patients.value.push({ ...formData.value, id: Date.now() })
     }
-    // Jika API sudah siap, jalankan ini untuk sinkronisasi otomatis:
+    
+    // Jika API siap:
     // await posStore.fetchPatients(true)
+    
     showModal.value = false
   } catch (error) { console.error(error) }
 }
