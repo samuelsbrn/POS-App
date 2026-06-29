@@ -2,11 +2,10 @@
 import { ref, onMounted } from 'vue'
 import { usePosStore } from '../stores/posStore'
 import { storeToRefs } from 'pinia'
-import axios from 'axios'
 
+// 1. Hubungkan ke Store
 const posStore = usePosStore()
-// Tarik data pasien dari gudang pusat
-const { patients } = storeToRefs(posStore) 
+const { patients } = storeToRefs(posStore) // Menggunakan variabel 'patients'
 
 const isLoading = ref(false)
 const showModal = ref(false)
@@ -28,73 +27,73 @@ const openEditModal = (customer: any) => {
 }
 
 const saveCustomer = async () => {
-  // Logika update/create ke API tetap di sini, 
-  // tapi setelah berhasil, kita perintahkan Store untuk mengambil data terbaru
   try {
     if (isEditMode.value) {
-      // await axios.put(...)
       const index = patients.value.findIndex(c => c.id === formData.value.id)
-      if (index !== -1) patients.value[index] = { ...formData.value } // Ubah data lokal sementara
+      if (index !== -1) patients.value[index] = { ...formData.value }
     } else {
-      // await axios.post(...)
-      patients.value.push({ ...formData.value, id: Date.now() }) // Ubah data lokal sementara
+      patients.value.push({ ...formData.value, id: Date.now() })
     }
-    
-    // Nanti jika API Phalcon jalan, cukup aktifkan baris ini untuk merefresh gudang pusat:
-    // await posStore.fetchPatients(true) 
-    
+    // Jika API sudah siap, jalankan ini untuk sinkronisasi otomatis:
+    // await posStore.fetchPatients(true)
     showModal.value = false
   } catch (error) { console.error(error) }
 }
 
 const deleteCustomer = async (id: number) => {
-  if (!confirm('Hapus data pasien ini?')) return
-  // await axios.delete(...)
+  if (!confirm('Hapus data rekam medis pasien ini?')) return
   patients.value = patients.value.filter(c => c.id !== id)
 }
 
 onMounted(async () => {
   isLoading.value = true
-  await posStore.fetchPatients() // Panggil dari gudang
+  await posStore.fetchPatients()
   isLoading.value = false
 })
 </script>
 
 <template>
-  <main class="min-h-screen bg-gray-100 p-8 relative">
-    <div class="max-w-7xl mx-auto bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+  <main class="min-h-screen bg-slate-50 p-8 relative font-sans">
+    <div class="max-w-7xl mx-auto bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
       
-      <div class="flex justify-between items-center mb-6">
-        <h2 class="text-2xl font-bold text-gray-800">Manajemen Pasien (Customer)</h2>
-        <button @click="openAddModal" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-xl shadow transition-colors">+ Tambah Pasien</button>
+      <div class="flex justify-between items-center mb-8">
+        <h2 class="text-2xl font-extrabold text-slate-800 flex items-center gap-3">
+          <span class="w-2 h-8 bg-teal-500 rounded-full"></span> Data Master Pasien
+        </h2>
+        <button @click="openAddModal" class="bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white font-bold py-3 px-6 rounded-2xl shadow-lg transition-all uppercase tracking-wider text-sm">
+          + Registrasi Pasien
+        </button>
       </div>
 
       <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse">
           <thead>
-            <tr class="bg-gray-50 text-gray-600 border-b-2 border-gray-200">
+            <tr class="bg-slate-50 text-slate-500 border-b-2 border-slate-200 uppercase tracking-wider text-xs">
               <th class="p-4 font-bold">MRN / NIK</th>
               <th class="p-4 font-bold">Nama Pasien</th>
-              <th class="p-4 font-bold">L/P & Tgl Lahir</th>
+              <th class="p-4 font-bold">Demografi</th>
               <th class="p-4 font-bold">Kontak</th>
               <th class="p-4 font-bold text-center">Aksi</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(c, index) in customers" :key="index" class="border-b border-gray-100 hover:bg-gray-50">
+            <tr v-if="isLoading">
+              <td colspan="5" class="p-8 text-center text-slate-400 font-medium">Memuat data dari server...</td>
+            </tr>
+            <tr v-else v-for="(p, index) in patients" :key="index" class="border-b border-slate-100 hover:bg-teal-50/50 transition-colors">
               <td class="p-4">
-                <div class="font-bold text-blue-700">{{ c.mrn }}</div>
-                <div class="text-xs text-gray-500">{{ c.nik }}</div>
+                <div class="font-black text-teal-700 tracking-wide">{{ p.mrn }}</div>
+                <div class="text-xs text-slate-400 font-mono mt-1">{{ p.nik }}</div>
               </td>
-              <td class="p-4 font-semibold text-gray-800">{{ c.name }}</td>
-              <td class="p-4 text-sm text-gray-600">
-                <span :class="c.gender === 'L' ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'" class="px-2 py-0.5 rounded font-bold mr-2">{{ c.gender }}</span>
-                {{ c.dob }}
+              <td class="p-4 font-bold text-slate-700">{{ p.name }}</td>
+              <td class="p-4 text-sm text-slate-600">
+                <span :class="p.gender === 'L' ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'" class="px-2 py-0.5 rounded font-black text-xs mr-2">{{ p.gender }}</span>
+                {{ p.dob }}
               </td>
-              <td class="p-4 text-sm text-gray-600">{{ c.phone }}</td>
-              <td class="p-4 flex justify-center gap-2">
-                <button @click="openEditModal(c)" class="text-yellow-600 hover:text-yellow-800 bg-yellow-50 p-2 rounded-lg">Edit</button>
-                <button @click="deleteCustomer(c.id)" class="text-red-600 hover:text-red-800 bg-red-50 p-2 rounded-lg">Hapus</button>
+              <td class="p-4 text-sm text-slate-600 font-mono">{{ p.phone }}</td>
+              <td class="p-4 flex justify-center gap-3">
+                <button @click="openEditModal(p)" class="text-yellow-600 bg-yellow-50 hover:bg-yellow-100 p-2 rounded-xl transition-all font-bold text-xs uppercase tracking-widest">Edit</button>
+                <button @click="deleteCustomer(p.id)" class="text-red-600 bg-red-50 hover:bg-red-100 p-2 rounded-xl transition-all font-bold text-xs uppercase tracking-widest">Hapus</button>
               </td>
             </tr>
           </tbody>
@@ -102,50 +101,50 @@ onMounted(async () => {
       </div>
     </div>
 
-    <div v-if="showModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden">
-        <div class="bg-gray-50 border-b border-gray-200 p-4 flex justify-between items-center">
-          <h3 class="font-bold text-lg text-gray-800">{{ isEditMode ? 'Edit Pasien' : 'Registrasi Pasien Baru' }}</h3>
-          <button @click="showModal = false" class="text-gray-400 hover:text-red-500 font-bold text-xl">&times;</button>
+    <div v-if="showModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div class="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden border border-slate-100">
+        <div class="bg-teal-600 p-5 flex justify-between items-center">
+          <h3 class="text-white font-black tracking-widest uppercase text-sm">{{ isEditMode ? 'Edit Profil Pasien' : 'Registrasi Pasien Baru' }}</h3>
+          <button @click="showModal = false" class="text-teal-100 hover:text-white font-black text-2xl">&times;</button>
         </div>
 
-        <div class="p-6 grid grid-cols-2 gap-4">
+        <div class="p-8 grid grid-cols-2 gap-5">
           <div>
-            <label class="block text-sm font-bold text-gray-700 mb-1">MRN (Medical Record Number)</label>
-            <input type="text" v-model="formData.mrn" class="w-full border-2 border-gray-200 rounded-lg p-2 bg-gray-50" readonly>
+            <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Nomor Rekam Medis (MRN)</label>
+            <input type="text" v-model="formData.mrn" class="w-full border-2 border-slate-200 rounded-xl p-3 bg-slate-100 font-black text-slate-600 cursor-not-allowed" readonly>
           </div>
           <div>
-            <label class="block text-sm font-bold text-gray-700 mb-1">NIK (Nomor KTP)</label>
-            <input type="text" v-model="formData.nik" placeholder="16 digit NIK" class="w-full border-2 border-gray-200 rounded-lg p-2">
+            <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">NIK (KTP)</label>
+            <input type="text" v-model="formData.nik" placeholder="16 digit NIK" class="w-full border-2 border-slate-200 rounded-xl p-3 font-bold text-slate-700 focus:border-teal-500 focus:ring-0">
           </div>
           <div class="col-span-2">
-            <label class="block text-sm font-bold text-gray-700 mb-1">Nama Lengkap</label>
-            <input type="text" v-model="formData.name" placeholder="Nama sesuai KTP" class="w-full border-2 border-gray-200 rounded-lg p-2">
+            <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Nama Lengkap Pasien</label>
+            <input type="text" v-model="formData.name" placeholder="Sesuai kartu identitas" class="w-full border-2 border-slate-200 rounded-xl p-3 font-bold text-slate-700 focus:border-teal-500 focus:ring-0">
           </div>
           <div>
-            <label class="block text-sm font-bold text-gray-700 mb-1">Jenis Kelamin</label>
-            <select v-model="formData.gender" class="w-full border-2 border-gray-200 rounded-lg p-2">
+            <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Jenis Kelamin</label>
+            <select v-model="formData.gender" class="w-full border-2 border-slate-200 rounded-xl p-3 font-bold text-slate-700 focus:border-teal-500 focus:ring-0">
               <option value="L">Laki-laki</option>
               <option value="P">Perempuan</option>
             </select>
           </div>
           <div>
-            <label class="block text-sm font-bold text-gray-700 mb-1">Tanggal Lahir</label>
-            <input type="date" v-model="formData.dob" class="w-full border-2 border-gray-200 rounded-lg p-2">
+            <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Tanggal Lahir</label>
+            <input type="date" v-model="formData.dob" class="w-full border-2 border-slate-200 rounded-xl p-3 font-bold text-slate-700 focus:border-teal-500 focus:ring-0">
           </div>
           <div class="col-span-2">
-            <label class="block text-sm font-bold text-gray-700 mb-1">Nomor Handphone</label>
-            <input type="tel" v-model="formData.phone" class="w-full border-2 border-gray-200 rounded-lg p-2">
+            <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Nomor Handphone</label>
+            <input type="tel" v-model="formData.phone" class="w-full border-2 border-slate-200 rounded-xl p-3 font-bold text-slate-700 focus:border-teal-500 focus:ring-0">
           </div>
           <div class="col-span-2">
-            <label class="block text-sm font-bold text-gray-700 mb-1">Alamat Domisili</label>
-            <textarea v-model="formData.address" rows="2" class="w-full border-2 border-gray-200 rounded-lg p-2"></textarea>
+            <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Alamat Domisili</label>
+            <textarea v-model="formData.address" rows="2" class="w-full border-2 border-slate-200 rounded-xl p-3 font-bold text-slate-700 focus:border-teal-500 focus:ring-0"></textarea>
           </div>
         </div>
 
-        <div class="p-4 border-t border-gray-100 bg-gray-50 flex gap-3 justify-end">
-          <button @click="showModal = false" class="px-5 py-2 font-bold text-gray-600 bg-white border rounded-xl hover:bg-gray-100">Batal</button>
-          <button @click="saveCustomer" class="px-5 py-2 font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl">Simpan</button>
+        <div class="p-5 border-t border-slate-100 bg-slate-50 flex gap-4">
+          <button @click="showModal = false" class="w-1/3 py-4 font-bold border-2 border-slate-200 rounded-2xl bg-white text-slate-500 hover:bg-slate-50 uppercase tracking-wider text-xs">Batal</button>
+          <button @click="saveCustomer" class="w-2/3 py-4 font-black text-white bg-teal-500 hover:bg-teal-600 rounded-2xl shadow-lg uppercase tracking-wider text-sm">Simpan Data Medis</button>
         </div>
       </div>
     </div>
