@@ -15,18 +15,19 @@ const isLoadingReceipt = ref(false)
 
 const refreshData = async () => {
   isLoading.value = true
-  await posStore.fetchHistory(true) // Paksa ambil data terbaru dari DB
+  await posStore.fetchHistory(true) 
   isLoading.value = false
 }
 
-// 2. FUNGSI AMBIL DETAIL STRUK
-const printReceipt = async (invoiceId: number) => {
+// 2. FUNGSI AMBIL DETAIL STRUK TERPISAH
+const printReceipt = async (id: number, type: string) => {
   showReceiptModal.value = true
   isLoadingReceipt.value = true
   selectedReceipt.value = null
 
   try {
-    const response = await axios.get(`http://localhost:8000/billing/history?id=${invoiceId}`)
+    // Kita kirim tipe agar backend tahu ini ngambil detail Invoice atau detail Split Payment
+    const response = await axios.get(`http://localhost:8000/billing/history?id=${id}&type=${type}`)
     selectedReceipt.value = response.data.data
   } catch (error) {
     console.error(error)
@@ -70,17 +71,18 @@ onMounted(() => {
             <tr class="bg-slate-50 text-slate-500 border-b-2 border-slate-200 uppercase tracking-wider text-xs">
               <th class="p-4 font-bold">No. Nota & Waktu</th>
               <th class="p-4 font-bold">Data Pasien</th>
-              <th class="p-4 font-bold">Total Tagihan</th>
-              <th class="p-4 font-bold text-center">Status Pembayaran</th>
+              <th class="p-4 font-bold">Nominal Transaksi</th>
+              <th class="p-4 font-bold text-center">Metode</th>
+              <th class="p-4 font-bold text-center">Status</th>
               <th class="p-4 font-bold text-center">Aksi</th>
             </tr>
           </thead>
           <tbody>
             <tr v-if="isLoading">
-              <td colspan="5" class="p-8 text-center text-slate-400 font-medium">Memuat riwayat transaksi dari MariaDB...</td>
+              <td colspan="6" class="p-8 text-center text-slate-400 font-medium">Memuat riwayat transaksi dari MariaDB...</td>
             </tr>
             <tr v-else-if="historyList.length === 0">
-              <td colspan="5" class="p-8 text-center text-slate-400 font-medium">Belum ada transaksi sama sekali.</td>
+              <td colspan="6" class="p-8 text-center text-slate-400 font-medium">Belum ada transaksi sama sekali.</td>
             </tr>
             <tr v-else v-for="(inv, index) in historyList" :key="index" class="border-b border-slate-100 hover:bg-teal-50/50 transition-colors">
               <td class="p-4">
@@ -89,12 +91,14 @@ onMounted(() => {
               </td>
               <td class="p-4 font-bold text-slate-700">{{ inv.patient_name }}</td>
               <td class="p-4 font-black text-slate-800">{{ formatRp(inv.total_amount) }}</td>
+              <td class="p-4 text-center font-bold text-slate-600">
+                <span class="bg-slate-100 px-3 py-1 rounded-md text-xs border border-slate-200">{{ inv.payment_method }}</span>
+              </td>
               <td class="p-4 text-center">
                 <span 
                   class="px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest uppercase border"
                   :class="{
-                    'bg-green-100 text-green-700 border-green-300': inv.payment_status === 'Paid',
-                    'bg-yellow-100 text-yellow-700 border-yellow-300': inv.payment_status === 'Partially Paid',
+                    'bg-green-100 text-green-700 border-green-300': inv.payment_status.includes('Paid'),
                     'bg-red-100 text-red-700 border-red-300': inv.payment_status === 'Unpaid',
                     'bg-slate-100 text-slate-700 border-slate-300': inv.payment_status === 'Void'
                   }"
@@ -103,7 +107,7 @@ onMounted(() => {
                 </span>
               </td>
               <td class="p-4 flex justify-center">
-                <button @click="printReceipt(inv.id)" class="bg-teal-600 hover:bg-teal-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-2 shadow-md transition-all">
+                <button @click="printReceipt(inv.id, inv.type)" class="bg-teal-600 hover:bg-teal-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-2 shadow-md transition-all">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
                   Lihat Struk
                 </button>
@@ -116,7 +120,7 @@ onMounted(() => {
 
     <div v-if="showReceiptModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       
-      <div class="bg-white p-8 rounded-sm shadow-2xl border-t-8 border-slate-800 max-w-sm w-full relative print-area">
+      <div class="bg-white p-8 rounded-sm shadow-2xl border-t-8 border-slate-800 max-w-sm w-full relative print-area overflow-y-auto max-h-[90vh]">
         
         <button @click="showReceiptModal = false" class="absolute top-2 right-2 text-slate-300 hover:text-red-500 font-black text-2xl no-print">&times;</button>
         
@@ -153,20 +157,25 @@ onMounted(() => {
 
           <div class="border-b-2 border-dashed border-slate-300 mb-4"></div>
 
-          <div class="space-y-1.5 text-xs text-slate-800 font-mono">
-            <div class="flex justify-between"><span>Subtotal</span><span>{{ formatRp(selectedReceipt.subtotal) }}</span></div>
-            <div class="flex justify-between"><span>Pajak (Tax)</span><span>{{ formatRp(selectedReceipt.tax) }}</span></div>
-            <div class="flex justify-between"><span>Diskon</span><span>- {{ formatRp(selectedReceipt.discount) }}</span></div>
-            <div class="flex justify-between text-lg font-black mt-3 pt-3 border-t-2 border-slate-800">
-              <span>TOTAL</span><span>{{ formatRp(selectedReceipt.total_amount) }}</span>
-            </div>
+          <div class="flex justify-between text-lg font-black mt-3 pt-3">
+            <span>TOTAL KESELURUHAN</span><span>{{ formatRp(selectedReceipt.total_tagihan_utama) }}</span>
           </div>
 
-          <div class="text-center mt-8">
-            <span class="px-5 py-2 rounded-full text-xs font-black tracking-widest border-2"
-              :class="selectedReceipt.payment_status === 'Paid' ? 'bg-green-100 text-green-700 border-green-500' : 'bg-red-100 text-red-700 border-red-500'"
-            >
-              {{ selectedReceipt.payment_status.toUpperCase() }}
+          <div v-if="selectedReceipt.is_split" class="mt-4 border-2 border-slate-800 p-4 rounded-lg bg-slate-50">
+             <h3 class="text-center font-bold text-xs uppercase tracking-widest text-slate-800 mb-3">BUKTI PEMBAYARAN (SPLIT KE-{{ selectedReceipt.split_sequence }})</h3>
+             <div class="space-y-1.5 text-xs font-mono text-slate-800">
+               <div class="flex justify-between"><span>Metode Bayar:</span><span class="font-bold">{{ selectedReceipt.method_name }}</span></div>
+               <div class="flex justify-between"><span>Nominal Masuk:</span><span class="font-bold">{{ formatRp(selectedReceipt.amount_paid) }}</span></div>
+               <div class="flex justify-between"><span>Kembalian:</span><span>{{ formatRp(selectedReceipt.change_amount) }}</span></div>
+             </div>
+             <div class="border-t-2 border-slate-300 mt-3 pt-3 flex justify-between font-bold text-sm">
+               <span>SISA TAGIHAN:</span><span>{{ formatRp(selectedReceipt.sisa_tagihan) }}</span>
+             </div>
+          </div>
+
+          <div v-else class="text-center mt-6">
+            <span class="px-5 py-2 rounded-full text-[10px] font-black tracking-widest border-2 bg-red-100 text-red-700 border-red-500">
+              UNPAID / BELUM DIBAYAR
             </span>
           </div>
 
@@ -194,4 +203,9 @@ onMounted(() => {
   }
   .no-print { display: none !important; }
 }
+/* Mempercantik Scrollbar untuk modal pop-up */
+.overflow-y-auto::-webkit-scrollbar { width: 6px; }
+.overflow-y-auto::-webkit-scrollbar-track { background: transparent; }
+.overflow-y-auto::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+.overflow-y-auto::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 </style>
