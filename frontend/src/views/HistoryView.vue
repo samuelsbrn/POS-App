@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { usePosStore } from '../stores/posStore'
 import { storeToRefs } from 'pinia'
 import axios from 'axios'
 
 // 1. Hubungkan ke Gudang Pusat
 const posStore = usePosStore()
-const { historyList } = storeToRefs(posStore)
+const { historyList, isHistoryLoaded } = storeToRefs(posStore)
 
 const isLoading = ref(false)
 const showReceiptModal = ref(false)
@@ -15,9 +15,19 @@ const isLoadingReceipt = ref(false)
 
 const refreshData = async () => {
   isLoading.value = true
-  await posStore.fetchHistory(true) 
-  isLoading.value = false
+  try {
+    await posStore.fetchHistory(true) 
+  } catch (error) {
+    console.error(error)
+  } finally {
+    isLoading.value = false
+  }
 }
+
+// Auto-refresh ketika historyList berubah (setelah transaksi baru)
+watch(historyList, (newValue) => {
+  console.log('✅ History diupdate! Total transaksi:', newValue.length)
+}, { deep: true })
 
 // 2. FUNGSI AMBIL DETAIL STRUK TERPISAH
 const printReceipt = async (id: number, type: string) => {
@@ -98,12 +108,12 @@ onMounted(() => {
                 <span 
                   class="px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest uppercase border"
                   :class="{
-                    'bg-green-100 text-green-700 border-green-300': inv.payment_status.includes('Paid'),
+                    'bg-green-100 text-green-700 border-green-300': inv.payment_status?.includes('Paid'),
                     'bg-red-100 text-red-700 border-red-300': inv.payment_status === 'Unpaid',
                     'bg-slate-100 text-slate-700 border-slate-300': inv.payment_status === 'Void'
                   }"
                 >
-                  {{ inv.payment_status }}
+                  {{ inv.payment_status || 'UNKNOWN' }}
                 </span>
               </td>
               <td class="p-4 flex justify-center">

@@ -12,7 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
 use Phalcon\Di\FactoryDefault;
 use Phalcon\Autoload\Loader; 
 use Phalcon\Mvc\Application;
-use Phalcon\Db\Adapter\Pdo\Postgresql as DbAdapter;
+use Phalcon\Db\Adapter\Pdo\Mysql as DbAdapter;
 use Phalcon\Http\Response;
 
 define('BASE_PATH', dirname(__DIR__));
@@ -32,8 +32,8 @@ $di = new FactoryDefault();
 $di->setShared('db', function () {
     return new DbAdapter([
         'host'     => '127.0.0.1',
-        'username' => 'postgresql',
-        'password' => 'postgresql', // <-- Ingat untuk ubah ke password MariaDB Anda
+        'username' => 'root',
+        'password' => 'mariadb',
         'dbname'   => 'pos'
     ]);
 });

@@ -1,8 +1,8 @@
 <?php
 use Phalcon\Mvc\Controller;
 
-// Panggil autoload composer agar library ripcord (Odoo XML-RPC) bisa digunakan
-require_once __DIR__ . '/../../vendor/autoload.php';
+// Note: Composer autoload dapat di-uncomment jika diperlukan integrasi Odoo
+// require_once __DIR__ . '/../../vendor/autoload.php';
 
 class BillingController extends Controller
 {
@@ -58,35 +58,11 @@ class BillingController extends Controller
             
             $this->db->commit();
 
-            // ------------------------------------------------------------------
-            // BAGIAN BARU: INTEGRASI ODOO DIJALANKAN SETELAH DB LOKAL BERHASIL
-            // ------------------------------------------------------------------
-            $odooStatus = "Tidak ada integrasi";
-            try {
-                // Cari nama pasien jika ada, jika tidak gunakan Walk-in
-                $patientName = 'Walk-in Customer';
-                if ($billing->patient_id) {
-                    $patient = Patients::findFirst($billing->patient_id);
-                    if ($patient) $patientName = $patient->name;
-                }
-
-                // Panggil fungsi sinkronisasi Odoo. 
-                // PERUBAHAN: Kita mengirim $rawBody['items'] agar Odoo mencatat rincian barang
-                $odooResponse = $this->sendInvoiceToOdoo($invoiceNumber, $rawBody['items'], $patientName);
-                $odooStatus = "Tersinkronisasi ke Odoo (ID: $odooResponse)";
-            } catch (\Exception $odooErr) {
-                // Jika server Odoo mati, tangkap errornya tapi transaksi POS lokal tetap sukses
-                $odooStatus = "Gagal sinkron ke Odoo: " . $odooErr->getMessage();
-                error_log($odooStatus);
-            }
-            // ------------------------------------------------------------------
-
             return $this->response->setJsonContent([
                 'status'  => 'success',
                 'message' => 'Transaksi berhasil dibuat!',
                 'billing_id' => $billing->id,
-                'invoice_number' => $invoiceNumber,
-                'odoo_status' => $odooStatus
+                'invoice_number' => $invoiceNumber
             ]);
 
         } catch (\Exception $e) {

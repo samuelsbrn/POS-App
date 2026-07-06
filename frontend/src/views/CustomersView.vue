@@ -10,8 +10,14 @@ const { patients } = storeToRefs(posStore)
 const isLoading = ref(false)
 const showModal = ref(false)
 const isEditMode = ref(false)
+const toast = ref({ show: false, message: '', type: 'success' })
 
 const formData = ref({ id: null as number | null, mrn: '', nik: '', name: '', gender: 'L', dob: '', phone: '', address: '' })
+
+const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+  toast.value = { show: true, message, type }
+  setTimeout(() => { toast.value.show = false }, 3000)
+}
 
 const openAddModal = () => {
   isEditMode.value = false
@@ -28,44 +34,87 @@ const openEditModal = (customer: any) => {
 
 const saveCustomer = async () => {
   try {
-    if (isEditMode.value) {
-      const index = patients.value.findIndex(c => c.id === formData.value.id)
-      if (index !== -1) patients.value[index] = { ...formData.value }
+    if (!formData.value.name || !formData.value.phone) {
+      showToast('Nama dan nomor handphone wajib diisi!', 'error')
+      return
+    }
+
+    if (isEditMode.value && formData.value.id) {
+      posStore.updatePatient(formData.value.id, formData.value)
+      showToast('Data pasien berhasil diperbarui!', 'success')
     } else {
-      // Push ke global state, PosView akan mendeteksi otomatis!
-      patients.value.push({ ...formData.value, id: Date.now() })
+      posStore.addPatient(formData.value)
+      showToast('Data pasien berhasil ditambahkan!', 'success')
     }
     
-    // Jika API siap:
-    // await posStore.fetchPatients(true)
-    
     showModal.value = false
-  } catch (error) { console.error(error) }
+  } catch (error) { 
+    showToast('Gagal menyimpan data pasien.', 'error')
+    console.error(error) 
+  }
 }
 
 const deleteCustomer = async (id: number) => {
   if (!confirm('Hapus data rekam medis pasien ini?')) return
-  patients.value = patients.value.filter(c => c.id !== id)
+  try {
+    posStore.deletePatient(id)
+    showToast('Data pasien berhasil dihapus!', 'success')
+  } catch (error) {
+    showToast('Gagal menghapus data pasien.', 'error')
+    console.error(error)
+  }
+}
+
+const refreshData = async () => {
+  isLoading.value = true
+  try {
+    await posStore.fetchPatients(true)
+    showToast('Data pasien berhasil diperbarui dari server!', 'success')
+  } catch (error) {
+    console.error(error)
+  } finally {
+    isLoading.value = false
+  }
 }
 
 onMounted(async () => {
   isLoading.value = true
-  await posStore.fetchPatients()
-  isLoading.value = false
+  try {
+    await posStore.fetchPatients()
+  } catch (error) {
+    console.error(error)
+  } finally {
+    isLoading.value = false
+  }
 })
 </script>
 
 <template>
   <main class="min-h-screen bg-slate-50 p-8 relative font-sans">
+    <!-- TOAST NOTIFICATION -->
+    <Transition name="toast">
+      <div v-if="toast.show" 
+           class="fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg font-bold flex items-center gap-2"
+           :class="{ 'bg-teal-600 text-white': toast.type === 'success', 'bg-red-600 text-white': toast.type === 'error' }">
+        {{ toast.message }}
+      </div>
+    </Transition>
+
     <div class="max-w-7xl mx-auto bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
       
       <div class="flex justify-between items-center mb-8">
         <h2 class="text-2xl font-extrabold text-slate-800 flex items-center gap-3">
           <span class="w-2 h-8 bg-teal-500 rounded-full"></span> Data Master Pasien
         </h2>
-        <button @click="openAddModal" class="bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white font-bold py-3 px-6 rounded-2xl shadow-lg transition-all uppercase tracking-wider text-sm">
-          + Registrasi Pasien
-        </button>
+        <div class="flex gap-3">
+          <button @click="refreshData" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 px-6 rounded-2xl flex items-center gap-2 transition-colors uppercase tracking-wider text-sm shadow-sm">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+            Refresh
+          </button>
+          <button @click="openAddModal" class="bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white font-bold py-3 px-6 rounded-2xl shadow-lg transition-all uppercase tracking-wider text-sm">
+            + Registrasi Pasien
+          </button>
+        </div>
       </div>
 
       <div class="overflow-x-auto">
@@ -83,7 +132,10 @@ onMounted(async () => {
             <tr v-if="isLoading">
               <td colspan="5" class="p-8 text-center text-slate-400 font-medium">Memuat data dari server...</td>
             </tr>
-            <tr v-else v-for="(p, index) in patients" :key="index" class="border-b border-slate-100 hover:bg-teal-50/50 transition-colors">
+            <tr v-else-if="patients.length === 0">
+              <td colspan="5" class="p-8 text-center text-slate-400 font-medium">Belum ada data pasien. Silakan tambahkan data baru.</td>
+            </tr>
+            <tr v-else v-for="(p, index) in patients" :key="p.id || index" class="border-b border-slate-100 hover:bg-teal-50/50 transition-colors">
               <td class="p-4">
                 <div class="font-black text-teal-700 tracking-wide">{{ p.mrn }}</div>
                 <div class="text-xs text-slate-400 font-mono mt-1">{{ p.nik }}</div>

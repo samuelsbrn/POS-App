@@ -181,9 +181,20 @@ const prosesTagihan = async () => {
 }
 
 const submitPayment = async () => {
-  if (formPayment.value.amount <= 0) return
+  if (formPayment.value.amount <= 0) {
+    showToast('Nominal pembayaran harus > 0', 'error')
+    return
+  }
+
+  // Jika method Cash dan amount > sisa tagihan, gunakan sisa tagihan saja
   const uangDiakui = (formPayment.value.method_id === 1 && formPayment.value.amount > sisaTagihan.value) 
                      ? sisaTagihan.value : formPayment.value.amount
+
+  // Validasi: amount pembayaran tidak boleh lebih besar dari sisa tagihan
+  if (uangDiakui > sisaTagihan.value && formPayment.value.method_id !== 1) {
+    showToast('Nominal pembayaran melebihi sisa tagihan!', 'error')
+    return
+  }
 
   const payload = {
     patient_billing_id: currentBillingId.value,
@@ -194,25 +205,49 @@ const submitPayment = async () => {
 
   try {
     const dataBayar = await posStore.prosesPembayaran(payload)
-    sisaTagihan.value = dataBayar.sisa_tagihan || 0
+    const sisaBaru = dataBayar.sisa_tagihan || 0
+    sisaTagihan.value = sisaBaru
+
+    // DEBUG LOG
+    console.log('📊 Payment Response:', {
+      sisa_tagihan: sisaBaru,
+      payment_status: dataBayar.payment_status,
+      amount_paid: uangDiakui,
+      total_tagihan: dataBayar.receipt?.total_tagihan
+    })
 
     if (dataBayar.receipt) {
       printReceipt(dataBayar.receipt)
     }
 
-    if (sisaTagihan.value <= 0) {
-      showToast(kembalian.value > 0 ? `Pembayaran LUNAS! Berikan kembalian: Rp ${kembalian.value.toLocaleString('id-ID')}` : 'Pembayaran LUNAS!', 'success')
-      showPaymentModal.value = false
-      cart.value = [] 
-      taxRate.value = 0
-      discountRp.value = 0
-      selectedPatient.value = patientsList.value[0] 
+    // CEK APAKAH SUDAH LUNAS ATAU MASIH SPLIT
+    if (sisaBaru <= 0) {
+      // TRANSAKSI SELESAI - LUNAS ✅
+      showToast(kembalian.value > 0 ? `✅ Pembayaran LUNAS! Kembalian: Rp ${kembalian.value.toLocaleString('id-ID')}` : '✅ Pembayaran LUNAS!', 'success')
+      
+      // Tunggu 2 detik biar struk sempat di-print
+      setTimeout(() => {
+        showPaymentModal.value = false
+        cart.value = [] 
+        taxRate.value = 0
+        discountRp.value = 0
+        selectedPatient.value = patientsList.value[0]
+        formPayment.value = { method_id: 1, amount: 0 }
+      }, 2000)
     } else {
-      showToast(`Pembayaran Parsial sukses. Sisa: Rp ${sisaTagihan.value.toLocaleString('id-ID')}`, 'warning')
-      formPayment.value.amount = sisaTagihan.value 
+      // MASIH ADA SISA - SPLIT PAYMENT 🔄
+      showToast(`⚠️ Pembayaran Parsial sukses! Sisa: Rp ${sisaBaru.toLocaleString('id-ID')}`, 'warning')
+      
+      // Reset form untuk pembayaran berikutnya
+      formPayment.value.method_id = 1
+      formPayment.value.amount = sisaBaru
+      
+      // Beri opsi lanjut bayar vs tutup
+      console.log('🔄 Split Payment Mode - Tunggu pembayaran berikutnya')
     }
-  } catch (error) { 
-    showToast('Gagal memproses pembayaran.', 'error') 
+  } catch (error) {
+    console.error('Payment Error:', error)
+    showToast('❌ Gagal memproses pembayaran. Cek server backend.', 'error') 
   }
 }
 
@@ -345,9 +380,16 @@ onUnmounted(() => {
         </div>
 
         <div class="p-5 sm:p-8 space-y-4 sm:space-y-6 overflow-y-auto">
-          <div class="text-center">
-            <div class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest mb-1 sm:mb-2">Sisa Pembayaran</div>
-            <div class="text-3xl sm:text-5xl font-black text-slate-800">Rp {{ sisaTagihan.toLocaleString('id-ID') }}</div>
+          <!-- TOTAL TAGIHAN ASLI -->
+          <div class="text-center bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <div class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Total Tagihan Asli</div>
+            <div class="text-2xl sm:text-3xl font-black text-slate-700">Rp {{ sisaTagihan.toLocaleString('id-ID') }}</div>
+          </div>
+
+          <!-- SISA PEMBAYARAN (HIGHLIGHT) - Hanya muncul jika sudah ada pembayaran partial -->
+          <div v-if="sisaTagihan < grandTotal" class="text-center bg-gradient-to-r from-orange-50 to-red-50 p-5 rounded-2xl border-2 border-orange-300">
+            <div class="text-[10px] sm:text-xs font-bold text-orange-600 uppercase tracking-widest mb-2">⚠️ Sisa Pembayaran</div>
+            <div class="text-4xl sm:text-5xl font-black text-orange-700">Rp {{ sisaTagihan.toLocaleString('id-ID') }}</div>
           </div>
 
           <div class="space-y-4 sm:space-y-5">
@@ -368,12 +410,23 @@ onUnmounted(() => {
               <span class="font-bold text-xs sm:text-sm uppercase tracking-widest">Kembalian</span>
               <span class="font-black text-lg sm:text-xl">Rp {{ kembalian.toLocaleString('id-ID') }}</span>
             </div>
+            
+            <!-- INFO SPLIT PAYMENT JIKA BERLANGSUNG -->
+            <div v-if="sisaTagihan < (cart.reduce((sum, item) => sum + (item.price * item.qty), 0))" class="bg-blue-50 p-3 sm:p-4 rounded-xl border border-blue-200">
+              <div class="flex items-start gap-2">
+                <span class="text-lg">🔄</span>
+                <div class="text-xs sm:text-sm text-blue-700 font-bold">
+                  <div>Mode Split Payment Aktif</div>
+                  <div class="text-[10px] mt-1 opacity-75">Anda bisa melanjutkan pembayaran dengan metode berbeda</div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
         <div class="p-4 sm:p-5 border-t border-slate-100 bg-slate-50 flex gap-3 sm:gap-4 flex-shrink-0">
-          <button @click="showPaymentModal = false" class="w-1/3 py-3 sm:py-4 font-bold border-2 border-slate-200 rounded-xl sm:rounded-2xl bg-white text-slate-500 hover:bg-slate-50 uppercase tracking-wider text-[10px] sm:text-xs transition-colors">Batal</button>
-          <button @click="submitPayment" class="w-2/3 py-3 sm:py-4 font-black text-white bg-teal-500 hover:bg-teal-600 rounded-xl sm:rounded-2xl shadow-lg uppercase tracking-wider text-xs sm:text-sm transition-all transform active:scale-95">Konfirmasi</button>
+          <button @click="showPaymentModal = false" class="w-1/3 py-3 sm:py-4 font-bold border-2 border-slate-200 rounded-xl sm:rounded-2xl bg-white text-slate-500 hover:bg-slate-50 uppercase tracking-wider text-[10px] sm:text-xs transition-colors">Tutup</button>
+          <button @click="submitPayment" class="w-2/3 py-3 sm:py-4 font-black text-white bg-teal-500 hover:bg-teal-600 rounded-xl sm:rounded-2xl shadow-lg uppercase tracking-wider text-xs sm:text-sm transition-all transform active:scale-95">Konfirmasi Bayar</button>
         </div>
       </div>
     </div>
