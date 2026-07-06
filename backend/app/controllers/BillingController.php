@@ -1,6 +1,9 @@
 <?php
 use Phalcon\Mvc\Controller;
 
+// Panggil autoload composer agar library ripcord (Odoo XML-RPC) bisa digunakan
+require_once __DIR__ . '/../../vendor/autoload.php';
+
 class BillingController extends Controller
 {
     // =======================================================
@@ -55,11 +58,35 @@ class BillingController extends Controller
             
             $this->db->commit();
 
+            // ------------------------------------------------------------------
+            // BAGIAN BARU: INTEGRASI ODOO DIJALANKAN SETELAH DB LOKAL BERHASIL
+            // ------------------------------------------------------------------
+            $odooStatus = "Tidak ada integrasi";
+            try {
+                // Cari nama pasien jika ada, jika tidak gunakan Walk-in
+                $patientName = 'Walk-in Customer';
+                if ($billing->patient_id) {
+                    $patient = Patients::findFirst($billing->patient_id);
+                    if ($patient) $patientName = $patient->name;
+                }
+
+                // Panggil fungsi sinkronisasi Odoo. 
+                // PERUBAHAN: Kita mengirim $rawBody['items'] agar Odoo mencatat rincian barang
+                $odooResponse = $this->sendInvoiceToOdoo($invoiceNumber, $rawBody['items'], $patientName);
+                $odooStatus = "Tersinkronisasi ke Odoo (ID: $odooResponse)";
+            } catch (\Exception $odooErr) {
+                // Jika server Odoo mati, tangkap errornya tapi transaksi POS lokal tetap sukses
+                $odooStatus = "Gagal sinkron ke Odoo: " . $odooErr->getMessage();
+                error_log($odooStatus);
+            }
+            // ------------------------------------------------------------------
+
             return $this->response->setJsonContent([
                 'status'  => 'success',
                 'message' => 'Transaksi berhasil dibuat!',
                 'billing_id' => $billing->id,
-                'invoice_number' => $invoiceNumber
+                'invoice_number' => $invoiceNumber,
+                'odoo_status' => $odooStatus
             ]);
 
         } catch (\Exception $e) {
@@ -303,5 +330,53 @@ class BillingController extends Controller
                 ]);
             }
         }
+    }
+
+    // =======================================================
+    // 4. FUNGSI BARU UNTUK SINKRONISASI KE ODOO 19 ACCOUNTING
+    // =======================================================
+    private function sendInvoiceToOdoo($invoiceNumber, $items, $customerName)
+    {
+        // Ganti Kredensial di bawah dengan kredensial Odoo lokal Anda
+        $url      = "http://localhost:8069";
+        $db       = "odoo19_db"; 
+        $username = "admin";     
+        $password = "admin";     
+
+        // 1. Autentikasi
+        $common = \Ripcord\Ripcord::client("$url/xmlrpc/2/common");
+        $uid = $common->authenticate($db, $username, $password, []);
+
+        if (!$uid) {
+            throw new \Exception("Kredensial Odoo salah atau server mati.");
+        }
+
+        // 2. Format Item Keranjang ke format One2many Odoo: [0, 0, { values }]
+        $invoiceLines = [];
+        foreach ($items as $item) {
+            $itemDb = HealthcareItems::findFirst($item['item_id']);
+            $itemName = $itemDb ? $itemDb->name : 'Item POS (ID: ' . $item['item_id'] . ')';
+
+            $invoiceLines[] = [0, 0, [
+                'name'       => $itemName,
+                'quantity'   => (float) $item['quantity'],
+                'price_unit' => (float) $item['price'],
+            ]];
+        }
+
+        // 3. Eksekusi Create Data
+        $models = \Ripcord\Ripcord::client("$url/xmlrpc/2/object");
+
+        $invoice_id = $models->execute_kw($db, $uid, $password,
+            'account.move', 'create',
+            [[
+                'move_type'        => 'out_invoice', 
+                'invoice_date'     => date('Y-m-d'),
+                'ref'              => 'POS / ' . $invoiceNumber,
+                'invoice_line_ids' => $invoiceLines
+            ]]
+        );
+
+        return $invoice_id;
     }
 }
