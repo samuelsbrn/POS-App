@@ -1,8 +1,8 @@
 <?php
 use Phalcon\Mvc\Controller;
 
-// Note: Composer autoload dapat di-uncomment jika diperlukan integrasi Odoo
-// require_once __DIR__ . '/../../vendor/autoload.php';
+// Pastikan composer autoload diaktifkan karena kita membutuhkan library Ripcord
+require_once __DIR__ . '/../../vendor/autoload.php';
 
 class BillingController extends Controller
 {
@@ -58,11 +58,32 @@ class BillingController extends Controller
             
             $this->db->commit();
 
+            // AMBIL NAMA PASIEN UNTUK REFERENSI DI ODOO
+            $patientName = 'Walk-in Customer';
+            if ($billing->patient_id) {
+                $patientDb = Patients::findFirst($billing->patient_id);
+                if ($patientDb) $patientName = $patientDb->name;
+            }
+
+            // =======================================================
+            // 🚀 KIRIM DATA INVOICE KE ODOO ACCOUNTING SECARA OTOMATIS
+            // =======================================================
+            try {
+                // Memanggil fungsi privat di bawah
+                $odooInvoiceId = $this->sendInvoiceToOdoo($invoiceNumber, $rawBody['items'], $patientName);
+                $odooStatus = "Sukses dikirim ke Odoo (ID: $odooInvoiceId)";
+            } catch (\Exception $e) {
+                // Jika Odoo mati, POS tetap jalan (hanya diberi peringatan)
+                error_log("Odoo Sync Error: " . $e->getMessage());
+                $odooStatus = "Gagal kirim ke Odoo: " . $e->getMessage();
+            }
+
             return $this->response->setJsonContent([
                 'status'  => 'success',
                 'message' => 'Transaksi berhasil dibuat!',
                 'billing_id' => $billing->id,
-                'invoice_number' => $invoiceNumber
+                'invoice_number' => $invoiceNumber,
+                'odoo_sync_status' => $odooStatus
             ]);
 
         } catch (\Exception $e) {
@@ -309,22 +330,22 @@ class BillingController extends Controller
     }
 
     // =======================================================
-    // 4. FUNGSI BARU UNTUK SINKRONISASI KE ODOO 19 ACCOUNTING
+    // 4. FUNGSI BARU UNTUK SINKRONISASI KE ODOO ACCOUNTING
     // =======================================================
     private function sendInvoiceToOdoo($invoiceNumber, $items, $customerName)
     {
-        // Ganti Kredensial di bawah dengan kredensial Odoo lokal Anda
+        // Sesuaikan dengan kredensial API Key Anda!
         $url      = "http://localhost:8069";
-        $db       = "odoo19_db"; 
-        $username = "admin";     
-        $password = "admin";     
+        $db       = "pos_accounting"; // Database disesuaikan
+        $username = "admin";          // Username disesuaikan
+        $apiKey   = "7c8b90c4b99958dcc20bff4f38baf13b23d2d83d"; // API Key terbaru     
 
-        // 1. Autentikasi
+        // 1. Autentikasi menggunakan API Key
         $common = \Ripcord\Ripcord::client("$url/xmlrpc/2/common");
-        $uid = $common->authenticate($db, $username, $password, []);
+        $uid = $common->authenticate($db, $username, $apiKey, []);
 
         if (!$uid) {
-            throw new \Exception("Kredensial Odoo salah atau server mati.");
+            throw new \Exception("Kredensial API Odoo salah atau server belum menyala.");
         }
 
         // 2. Format Item Keranjang ke format One2many Odoo: [0, 0, { values }]
@@ -340,18 +361,24 @@ class BillingController extends Controller
             ]];
         }
 
-        // 3. Eksekusi Create Data
+        // 3. Eksekusi Create Data (Draft Invoice)
         $models = \Ripcord\Ripcord::client("$url/xmlrpc/2/object");
 
-        $invoice_id = $models->execute_kw($db, $uid, $password,
+        $invoice_id = $models->execute_kw($db, $uid, $apiKey,
             'account.move', 'create',
             [[
                 'move_type'        => 'out_invoice', 
+                'partner_id'       => 1, 
                 'invoice_date'     => date('Y-m-d'),
-                'ref'              => 'POS / ' . $invoiceNumber,
+                'ref'              => 'POS / ' . $invoiceNumber . ' - ' . $customerName,
                 'invoice_line_ids' => $invoiceLines
             ]]
         );
+
+        // 4. (Opsional) Langsung Post/Confirm Invoice di Odoo
+        if ($invoice_id) {
+            $models->execute_kw($db, $uid, $apiKey, 'account.move', 'action_post', [[$invoice_id]]);
+        }
 
         return $invoice_id;
     }

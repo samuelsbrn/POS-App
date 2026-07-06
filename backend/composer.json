@@ -4,7 +4,7 @@
     "type": "project",
     "require": {
         "php": ">=7.4",
-        "poing/ripcord": "^0.1.4"
+        "darkaonline/ripcord": "^0.3.0"
     },
     "autoload": {
         "psr-4": {
