@@ -69,11 +69,9 @@ class BillingController extends Controller
             // 🚀 KIRIM DATA INVOICE KE ODOO ACCOUNTING SECARA OTOMATIS
             // =======================================================
             try {
-                // Memanggil fungsi privat di bawah
                 $odooInvoiceId = $this->sendInvoiceToOdoo($invoiceNumber, $rawBody['items'], $patientName);
                 $odooStatus = "Sukses dikirim ke Odoo (ID: $odooInvoiceId)";
             } catch (\Exception $e) {
-                // Jika Odoo mati, POS tetap jalan (hanya diberi peringatan)
                 error_log("Odoo Sync Error: " . $e->getMessage());
                 $odooStatus = "Gagal kirim ke Odoo: " . $e->getMessage();
             }
@@ -187,7 +185,6 @@ class BillingController extends Controller
                     if ($patient) $patientName = $patient->name;
                 }
 
-                // Cek apakah tagihan ini punya pembayaran yang displit
                 $payments = BillingPayments::find([
                     'conditions' => 'patient_billing_id = :id:', 
                     'bind' => ['id' => $b->id], 
@@ -195,7 +192,6 @@ class BillingController extends Controller
                 ]);
 
                 if (count($payments) == 0) {
-                    // Jika belum pernah dibayar sama sekali (Unpaid)
                     $list[] = [
                         'id' => $b->id,
                         'type' => 'billing',
@@ -207,19 +203,18 @@ class BillingController extends Controller
                         'payment_status' => $b->status
                     ];
                 } else {
-                    // Jika sudah dibayar (baik lunas maupun split), BUAT BARIS TERPISAH UNTUK TIAP PEMBAYARAN!
                     $seq = 1;
                     foreach ($payments as $p) {
                         $methodNames = [ 1 => 'Uang Tunai (Cash)', 2 => 'QRIS / E-Wallet', 3 => 'Kartu Debit / Kredit' ];
                         $methodString = isset($methodNames[$p->payment_method_id]) ? $methodNames[$p->payment_method_id] : 'Lainnya';
                         
                         $list[] = [
-                            'id' => $p->id, // Menggunakan ID Pembayaran untuk Pop-up struk
+                            'id' => $p->id, 
                             'type' => 'payment',
                             'invoice_number' => $b->billing_number . '-' . $seq,
                             'created_at' => $p->payment_date,
                             'patient_name' => $patientName,
-                            'total_amount' => $p->amount_paid, // Nominal di tabel sesuai dengan jumlah yang dibayar
+                            'total_amount' => $p->amount_paid,
                             'payment_method' => $methodString,
                             'payment_status' => 'Paid (Split ' . $seq . ')'
                         ];
@@ -228,7 +223,6 @@ class BillingController extends Controller
                 }
             }
 
-            // Urutkan List berdasarkan waktu terbaru di atas
             usort($list, function($a, $b) {
                 $timeA = strtotime($a['created_at']);
                 $timeB = strtotime($b['created_at']);
@@ -251,7 +245,6 @@ class BillingController extends Controller
                     if ($patient) $patientName = $patient->name;
                 }
 
-                // Hitung ini split ke berapa dan sisa tagihannya
                 $allPayments = BillingPayments::find(['conditions' => 'patient_billing_id = :id: AND id <= :pid:', 'bind' => ['id' => $billing->id, 'pid' => $payment->id]]);
                 $seq = count($allPayments);
                 
@@ -292,7 +285,6 @@ class BillingController extends Controller
                     ]
                 ]);
             } else {
-                // TYPE == 'billing' (Berarti invoice belum pernah dibayar / Unpaid)
                 $billing = PatientBillings::findFirst($id);
                 if (!$billing) return $this->response->setStatusCode(404)->setJsonContent(['status' => 'error', 'message' => 'Invoice tidak ditemukan.']);
 
@@ -334,13 +326,12 @@ class BillingController extends Controller
     // =======================================================
     private function sendInvoiceToOdoo($invoiceNumber, $items, $customerName)
     {
-        // Sesuaikan dengan kredensial API Key Anda!
         $url      = "http://localhost:8069";
-        $db       = "pos_accounting"; // Database disesuaikan
-        $username = "admin";          // Username disesuaikan
-        $apiKey   = "7c8b90c4b99958dcc20bff4f38baf13b23d2d83d"; // API Key terbaru     
+        $db       = "pos_accounting"; 
+        $username = "admin";          
+        $apiKey   = "7c8b90c4b99958dcc20bff4f38baf13b23d2d83d";     
 
-        // 1. Autentikasi menggunakan API Key
+        // 1. Autentikasi
         $common = \Ripcord\Ripcord::client("$url/xmlrpc/2/common");
         $uid = $common->authenticate($db, $username, $apiKey, []);
 
@@ -348,7 +339,19 @@ class BillingController extends Controller
             throw new \Exception("Kredensial API Odoo salah atau server belum menyala.");
         }
 
-        // 2. Format Item Keranjang ke format One2many Odoo: [0, 0, { values }]
+        $models = \Ripcord\Ripcord::client("$url/xmlrpc/2/object");
+
+        // 2. OTOMATIS CARI ATAU BUAT PELANGGAN DI ODOO
+        $partnerIds = $models->execute_kw($db, $uid, $apiKey, 'res.partner', 'search', [[['name', '=', $customerName]]]);
+        
+        if (!empty($partnerIds)) {
+            $partnerId = $partnerIds[0];
+        } else {
+            // Jika belum ada, buat profil pelanggan baru
+            $partnerId = $models->execute_kw($db, $uid, $apiKey, 'res.partner', 'create', [['name' => $customerName]]);
+        }
+
+        // 3. Format Keranjang Belanja
         $invoiceLines = [];
         foreach ($items as $item) {
             $itemDb = HealthcareItems::findFirst($item['item_id']);
@@ -361,21 +364,19 @@ class BillingController extends Controller
             ]];
         }
 
-        // 3. Eksekusi Create Data (Draft Invoice)
-        $models = \Ripcord\Ripcord::client("$url/xmlrpc/2/object");
-
+        // 4. Buat Draft Invoice
         $invoice_id = $models->execute_kw($db, $uid, $apiKey,
             'account.move', 'create',
             [[
                 'move_type'        => 'out_invoice', 
-                'partner_id'       => 1, 
+                'partner_id'       => $partnerId, // ID Pelanggan yang valid
                 'invoice_date'     => date('Y-m-d'),
-                'ref'              => 'POS / ' . $invoiceNumber . ' - ' . $customerName,
+                'ref'              => 'POS / ' . $invoiceNumber,
                 'invoice_line_ids' => $invoiceLines
             ]]
         );
 
-        // 4. (Opsional) Langsung Post/Confirm Invoice di Odoo
+        // 5. Post (Verifikasi) Invoice
         if ($invoice_id) {
             $models->execute_kw($db, $uid, $apiKey, 'account.move', 'action_post', [[$invoice_id]]);
         }
