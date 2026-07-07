@@ -31,6 +31,30 @@ const addToCart = (product: any) => {
   searchQuery.value = ''
 }
 
+// ==========================================
+// FITUR BARU: KONTROL KUANTITAS KERANJANG
+// ==========================================
+const increaseQuantity = (item: any) => {
+  item.qty++
+}
+
+const decreaseQuantity = (item: any) => {
+  if (item.qty > 1) {
+    item.qty--
+  } else {
+    // Hapus barang jika kuantitas dikurangi saat jumlahnya 1
+    cart.value = cart.value.filter(i => i.id !== item.id)
+  }
+}
+
+const updateQuantity = (item: any) => {
+  if (item.qty <= 0 || !item.qty) {
+    // Hapus barang jika user mengetik angka 0 atau kosong
+    cart.value = cart.value.filter(i => i.id !== item.id)
+  }
+}
+// ==========================================
+
 const subtotal = computed(() => cart.value.reduce((total, item) => total + (item.price * item.qty), 0))
 const taxAmount = computed(() => (subtotal.value * taxRate.value) / 100)
 const grandTotal = computed(() => subtotal.value + taxAmount.value - discountRp.value)
@@ -338,10 +362,19 @@ onUnmounted(() => {
             <span class="font-medium text-xs sm:text-sm text-center">Keranjang masih kosong</span>
           </div>
           <div v-for="(item, index) in cart" :key="index" class="flex justify-between items-center bg-slate-50 p-2 sm:p-3 rounded-lg sm:rounded-xl border border-slate-100">
+            
+            <!-- PERUBAHAN TAMPILAN KERANJANG DI SINI -->
             <div class="flex-1 min-w-0 pr-2">
               <div class="font-bold text-slate-700 text-xs sm:text-sm truncate">{{ item.name }}</div>
-              <div class="text-[10px] sm:text-xs font-semibold text-teal-600 mt-0.5 sm:mt-1">{{ item.qty }}x @ Rp {{ item.price.toLocaleString('id-ID') }}</div>
+              <div class="flex items-center gap-2 mt-1.5">
+                <button @click="decreaseQuantity(item)" class="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 font-bold text-white transition-colors bg-red-500 rounded hover:bg-red-600 focus:outline-none">-</button>
+                <input type="number" v-model.number="item.qty" @change="updateQuantity(item)" class="w-12 h-6 sm:h-7 text-center bg-gray-100 border border-gray-300 rounded focus:outline-none focus:border-teal-500 text-xs sm:text-sm font-semibold" min="1">
+                <button @click="increaseQuantity(item)" class="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 font-bold text-white transition-colors bg-teal-500 rounded hover:bg-teal-600 focus:outline-none">+</button>
+                <span class="text-[10px] sm:text-xs font-semibold text-slate-500 ml-1">@ Rp {{ item.price.toLocaleString('id-ID') }}</span>
+              </div>
             </div>
+            <!-- AKHIR PERUBAHAN -->
+
             <div class="font-black text-slate-800 text-sm sm:text-base whitespace-nowrap">Rp {{ (item.qty * item.price).toLocaleString('id-ID') }}</div>
           </div>
         </div>
