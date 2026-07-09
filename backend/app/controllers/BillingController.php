@@ -1,7 +1,7 @@
 <?php
 use Phalcon\Mvc\Controller;
 
-// Pastikan composer autoload diaktifkan karena kita membutuhkan library Ripcord
+// Pastikan composer autoload diaktifkan
 require_once __DIR__ . '/../../vendor/autoload.php';
 
 class BillingController extends Controller
@@ -165,7 +165,7 @@ class BillingController extends Controller
     }
 
     // =======================================================
-    // 3. FUNGSI RIWAYAT (DIUBAH AGAR STRUK/PEMBAYARAN TERPISAH DI TABEL)
+    // 3. FUNGSI RIWAYAT
     // =======================================================
     public function historyAction()
     {
@@ -174,7 +174,6 @@ class BillingController extends Controller
         $type = $this->request->getQuery('type');
 
         if (!$id) {
-            // MENGAMBIL DAFTAR UNTUK TABEL UTAMA
             $billings = PatientBillings::find();
             $list = [];
 
@@ -233,7 +232,6 @@ class BillingController extends Controller
             return $this->response->setJsonContent(['status' => 'success', 'data' => $list]);
             
         } else {
-            // MENGAMBIL DETAIL UNTUK POP-UP STRUK
             if ($type === 'payment') {
                 $payment = BillingPayments::findFirst($id);
                 if (!$payment) return $this->response->setStatusCode(404)->setJsonContent(['status' => 'error', 'message' => 'Payment tidak ditemukan.']);
@@ -322,33 +320,69 @@ class BillingController extends Controller
     }
 
     // =======================================================
-    // 4. FUNGSI BARU UNTUK SINKRONISASI KE ODOO ACCOUNTING
+    // 4. FUNGSI BARU UNTUK SINKRONISASI KE ODOO (JSON-RPC)
     // =======================================================
-    private function sendInvoiceToOdoo($invoiceNumber, $items, $customerName)
+    private function odooJsonRpc($url, $service, $method, $args)
     {
-        $url      = "http://localhost:8069";
-        $db       = "pos_accounting"; 
-        $username = "admin";          
-        $apiKey   = "7c8b90c4b99958dcc20bff4f38baf13b23d2d83d";     
+        $payload = json_encode([
+            'jsonrpc' => '2.0',
+            'method'  => 'call',
+            'params'  => [
+                'service' => $service,
+                'method'  => $method,
+                'args'    => $args
+            ],
+            'id' => rand(1, 1000)
+        ]);
 
-        // 1. Autentikasi
-        $common = \Ripcord\Ripcord::client("$url/xmlrpc/2/common");
-        $uid = $common->authenticate($db, $username, $apiKey, []);
+        $options = [
+            'http' => [
+                'header'  => "Content-Type: application/json\r\n",
+                'method'  => 'POST',
+                'content' => $payload,
+                'ignore_errors' => true
+            ]
+        ];
 
-        if (!$uid) {
-            throw new \Exception("Kredensial API Odoo salah atau server belum menyala.");
+        $context  = stream_context_create($options);
+        $result = file_get_contents($url, false, $context);
+        
+        if ($result === false) {
+            throw new \Exception("Gagal menghubungi server Odoo di $url. Pastikan Odoo menyala.");
         }
 
-        $models = \Ripcord\Ripcord::client("$url/xmlrpc/2/object");
+        $response = json_decode($result, true);
+
+        if (isset($response['error'])) {
+            $errorMsg = isset($response['error']['data']['message']) ? $response['error']['data']['message'] : json_encode($response['error']);
+            throw new \Exception($errorMsg);
+        }
+
+        return $response['result'] ?? null;
+    }
+
+    private function sendInvoiceToOdoo($invoiceNumber, $items, $customerName)
+    {
+        $url      = "http://localhost:8069/jsonrpc"; // Memanggil endpoint JSON-RPC
+        $db       = "pos_accounting"; 
+        $username = "admin";          
+        $apiKey   = "b4a97bcbb81b6c10b0fd24df6ea588a359c58de5";     
+
+        // 1. Autentikasi
+        $uid = $this->odooJsonRpc($url, "common", "authenticate", [$db, $username, $apiKey, []]);
+
+        if (!$uid) {
+            throw new \Exception("Kredensial API Odoo salah atau database tidak ditemukan.");
+        }
 
         // 2. OTOMATIS CARI ATAU BUAT PELANGGAN DI ODOO
-        $partnerIds = $models->execute_kw($db, $uid, $apiKey, 'res.partner', 'search', [[['name', '=', $customerName]]]);
+        $partnerIds = $this->odooJsonRpc($url, "object", "execute_kw", [$db, $uid, $apiKey, 'res.partner', 'search', [[['name', '=', $customerName]]]]);
         
         if (!empty($partnerIds)) {
             $partnerId = $partnerIds[0];
         } else {
             // Jika belum ada, buat profil pelanggan baru
-            $partnerId = $models->execute_kw($db, $uid, $apiKey, 'res.partner', 'create', [['name' => $customerName]]);
+            $partnerId = $this->odooJsonRpc($url, "object", "execute_kw", [$db, $uid, $apiKey, 'res.partner', 'create', [['name' => $customerName]]]);
         }
 
         // 3. Format Keranjang Belanja
@@ -365,7 +399,7 @@ class BillingController extends Controller
         }
 
         // 4. Buat Draft Invoice
-        $invoice_id = $models->execute_kw($db, $uid, $apiKey,
+        $invoice_id = $this->odooJsonRpc($url, "object", "execute_kw", [$db, $uid, $apiKey,
             'account.move', 'create',
             [[
                 'move_type'        => 'out_invoice', 
@@ -374,11 +408,11 @@ class BillingController extends Controller
                 'ref'              => 'POS / ' . $invoiceNumber,
                 'invoice_line_ids' => $invoiceLines
             ]]
-        );
+        ]);
 
         // 5. Post (Verifikasi) Invoice
         if ($invoice_id) {
-            $models->execute_kw($db, $uid, $apiKey, 'account.move', 'action_post', [[$invoice_id]]);
+            $this->odooJsonRpc($url, "object", "execute_kw", [$db, $uid, $apiKey, 'account.move', 'action_post', [[$invoice_id]]]);
         }
 
         return $invoice_id;
