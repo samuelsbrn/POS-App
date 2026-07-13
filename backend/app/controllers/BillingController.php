@@ -147,7 +147,7 @@ class BillingController extends Controller
             $billing->save();
             $this->db->commit();
 
-            // 🚀 KIRIM DATA PEMBAYARAN KE ODOO
+            //  KIRIM DATA PEMBAYARAN KE ODOO
             try {
                 $this->syncPaymentToOdoo($billing->billing_number, $payment->amount_paid, $payment->payment_method_id);
             } catch (\Exception $e) {

@@ -1,0 +1,691 @@
+2026-07-02 02:46:34,567 15144 WARNING ? odoo.tools.config: missing --http-interface/http_interface, using 0.0.0.0 by default, will change to 127.0.0.1 in 20.0 
+2026-07-02 02:46:34,578 15144 INFO ? odoo: Odoo version 19.0-20260701 
+2026-07-02 02:46:34,578 15144 INFO ? odoo: Using configuration file at c:\program files\odoo 19.0.20260701\server\odoo.conf 
+2026-07-02 02:46:34,578 15144 INFO ? odoo: addons paths: _NamespacePath(['C:\\Program Files\\Odoo 19.0.20260701\\server\\odoo\\addons', 'C:\\Users\\ASUS\\AppData\\Local\\OpenERP S.A.\\Odoo\\addons\\19.0', 'c:\\program files\\odoo 19.0.20260701\\server\\odoo\\addons', 'c:\\program files\\odoo 19.0.20260701\\server\\addons']) 
+2026-07-02 02:46:34,578 15144 INFO ? odoo: database: openpg@localhost:5432 
+2026-07-02 02:46:40,849 15144 INFO ? odoo.service.server: Initiating shutdown 
+2026-07-02 02:46:40,849 15144 INFO ? odoo.service.server: Hit CTRL-C again or send a second signal to force the shutdown. 
+2026-07-02 02:46:40,865 15144 INFO ? odoo.service.server: A child process was found, pid is psutil.Process(pid=28460, name='conhost.exe', status='running', started='02:46:23'), process may hang 
+2026-07-02 02:46:45,013 22532 INFO ? odoo: Odoo version 19.0-20260701 
+2026-07-02 02:46:45,013 22532 INFO ? odoo: Using configuration file at c:\program files\odoo 19.0.20260701\server\odoo.conf 
+2026-07-02 02:46:45,013 22532 INFO ? odoo: addons paths: _NamespacePath(['C:\\Program Files\\Odoo 19.0.20260701\\server\\odoo\\addons', 'c:\\users\\asus\\appdata\\local\\openerp s.a\\odoo\\addons\\19.0', 'c:\\program files\\odoo 19.0.20260701\\server\\odoo\\addons', 'c:\\program files\\odoo 19.0.20260701\\server\\addons']) 
+2026-07-02 02:46:45,013 22532 INFO ? odoo: database: openpg@localhost:5432 
+2026-07-02 02:46:45,999 22532 INFO ? odoo.service.server: HTTP service (werkzeug) running on LAPTOP-FTKB6NRN:8069 
+2026-07-02 02:46:46,102 22532 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-02 02:46:46,177 22532 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-02 02:47:59,460 22532 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-02 02:47:59,486 22532 INFO ? werkzeug: 127.0.0.1 - - [02/Jul/2026 02:47:59] "GET / HTTP/1.1" 303 - 0 0.000 0.104
+2026-07-02 02:47:59,605 22532 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-02 02:47:59,695 22532 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-02 02:47:59,695 22532 INFO ? werkzeug: 127.0.0.1 - - [02/Jul/2026 02:47:59] "GET /odoo HTTP/1.1" 303 - 0 0.000 0.175
+2026-07-02 02:47:59,815 22532 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-02 02:48:01,185 22532 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-02 02:48:01,253 22532 INFO ? werkzeug: 127.0.0.1 - - [02/Jul/2026 02:48:01] "GET /web/database/selector HTTP/1.1" 200 - 0 0.000 1.551
+2026-07-02 02:51:05,933 22532 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-02 02:51:11,015 22532 INFO None odoo.service.db: Create database `pos`. 
+2026-07-02 02:51:11,117 22532 INFO None odoo.sql_db: Connection to the database failed 
+2026-07-02 02:51:11,117 22532 ERROR None odoo.addons.web.controllers.database: Database creation error. 
+Traceback (most recent call last):
+  File "C:\Program Files\Odoo 19.0.20260701\server\odoo\addons\web\controllers\database.py", line 81, in create
+    dispatch_rpc('db', 'create_database', [master_pwd, name, bool(post.get('demo')), lang, password, post['login'], country_code, post['phone']])
+  File "C:\Program Files\Odoo 19.0.20260701\server\odoo\http.py", line 449, in dispatch_rpc
+    return dispatch(method, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Odoo 19.0.20260701\server\odoo\service\db.py", line 519, in dispatch
+    return g[exp_method_name](*params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Odoo 19.0.20260701\server\odoo\service\db.py", line 52, in if_db_mgt_enabled
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Odoo 19.0.20260701\server\odoo\service\db.py", line 180, in exp_create_database
+    _create_empty_database(db_name)
+  File "C:\Program Files\Odoo 19.0.20260701\server\odoo\service\db.py", line 130, in _create_empty_database
+    with closing(db.cursor()) as cr:
+                 ^^^^^^^^^^^
+  File "C:\Program Files\Odoo 19.0.20260701\server\odoo\sql_db.py", line 769, in cursor
+    return Cursor(self.__pool, self.__dbname, self.__dsn)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Odoo 19.0.20260701\server\odoo\sql_db.py", line 365, in __init__
+    self._cnx: PsycoConnection = pool.borrow(dsn)
+                                 ^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Odoo 19.0.20260701\server\odoo\tools\func.py", line 88, in locked
+    return func(inst, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Odoo 19.0.20260701\server\odoo\sql_db.py", line 693, in borrow
+    result = psycopg2.connect(
+             ^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Odoo 19.0.20260701\python\Lib\site-packages\psycopg2\__init__.py", line 122, in connect
+    conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+psycopg2.OperationalError: connection to server at "localhost" (::1), port 5432 failed: fe_sendauth: no password supplied
+
+2026-07-02 02:51:12,376 22532 INFO None odoo.sql_db: Connection to the database failed 
+2026-07-02 02:51:12,444 22532 INFO None werkzeug: 127.0.0.1 - - [02/Jul/2026 02:51:12] "POST /web/database/create HTTP/1.1" 200 - 0 0.000 6.602
+2026-07-02 03:42:39,504 22532 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-02 03:42:39,512 22532 INFO ? werkzeug: 127.0.0.1 - - [02/Jul/2026 03:42:39] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.124
+2026-07-02 03:42:44,137 22532 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-02 03:42:44,138 22532 INFO ? werkzeug: 127.0.0.1 - - [02/Jul/2026 03:42:44] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.110
+2026-07-02 03:42:51,089 22532 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-02 03:42:51,090 22532 INFO ? werkzeug: 127.0.0.1 - - [02/Jul/2026 03:42:51] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.091
+2026-07-02 03:43:01,445 22532 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-02 03:43:01,446 22532 INFO ? werkzeug: 127.0.0.1 - - [02/Jul/2026 03:43:01] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.085
+2026-07-02 03:43:17,426 22532 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-02 03:43:17,426 22532 INFO ? werkzeug: 127.0.0.1 - - [02/Jul/2026 03:43:17] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.095
+2026-07-02 03:43:41,510 22532 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-02 03:43:41,511 22532 INFO ? werkzeug: 127.0.0.1 - - [02/Jul/2026 03:43:41] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.211
+2026-07-02 03:44:17,717 22532 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-02 03:44:17,718 22532 INFO ? werkzeug: 127.0.0.1 - - [02/Jul/2026 03:44:17] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.096
+2026-07-02 03:45:12,206 22532 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-02 03:45:12,207 22532 INFO ? werkzeug: 127.0.0.1 - - [02/Jul/2026 03:45:12] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.083
+2026-07-02 03:46:13,269 22532 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-02 03:46:13,269 22532 INFO ? werkzeug: 127.0.0.1 - - [02/Jul/2026 03:46:13] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.109
+2026-07-02 03:47:14,582 22532 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-02 03:47:14,583 22532 INFO ? werkzeug: 127.0.0.1 - - [02/Jul/2026 03:47:14] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.087
+2026-07-02 03:48:15,641 22532 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-02 03:48:15,642 22532 INFO ? werkzeug: 127.0.0.1 - - [02/Jul/2026 03:48:15] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.075
+2026-07-02 03:49:16,140 22532 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-02 03:49:16,140 22532 INFO ? werkzeug: 127.0.0.1 - - [02/Jul/2026 03:49:16] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.076
+2026-07-02 03:50:17,233 22532 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-02 03:50:17,233 22532 INFO ? werkzeug: 127.0.0.1 - - [02/Jul/2026 03:50:17] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.081
+2026-07-02 03:51:18,618 22532 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-02 03:51:18,622 22532 INFO ? werkzeug: 127.0.0.1 - - [02/Jul/2026 03:51:18] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.096
+2026-07-02 03:52:19,722 22532 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-02 03:52:19,725 22532 INFO ? werkzeug: 127.0.0.1 - - [02/Jul/2026 03:52:19] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.127
+2026-07-02 03:52:48,653 22532 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-02 03:52:48,653 22532 INFO ? werkzeug: 127.0.0.1 - - [02/Jul/2026 03:52:48] "POST /web/action/load HTTP/1.1" 404 - 0 0.000 0.073
+2026-07-02 03:52:48,886 22532 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-02 03:52:48,888 22532 INFO ? werkzeug: 127.0.0.1 - - [02/Jul/2026 03:52:48] "POST /web/dataset/call_kw/spreadsheet.dashboard.group/web_search_read HTTP/1.1" 404 - 0 0.000 0.075
+2026-07-02 03:52:48,978 22532 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-02 03:52:48,979 22532 INFO ? werkzeug: 127.0.0.1 - - [02/Jul/2026 03:52:48] "POST /web/dataset/call_kw/spreadsheet.dashboard.group/web_search_read HTTP/1.1" 404 - 0 0.000 0.074
+2026-07-02 03:52:51,057 22532 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-02 03:52:51,061 22532 INFO ? werkzeug: 127.0.0.1 - - [02/Jul/2026 03:52:51] "POST /web/webclient/version_info HTTP/1.1" 200 - 0 0.000 0.080
+2026-07-02 03:52:59,183 22532 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-02 03:52:59,183 22532 INFO ? werkzeug: 127.0.0.1 - - [02/Jul/2026 03:52:59] "POST /web/dataset/call_kw/spreadsheet.dashboard.group/web_search_read HTTP/1.1" 404 - 0 0.000 0.077
+2026-07-02 03:59:59,358 22532 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-02 03:59:59,359 22532 INFO ? werkzeug: 127.0.0.1 - - [02/Jul/2026 03:59:59] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.075
+2026-07-02 04:03:02,301 22532 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-02 04:03:02,302 22532 INFO ? werkzeug: 127.0.0.1 - - [02/Jul/2026 04:03:02] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.106
+2026-07-02 04:06:05,455 22532 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-02 04:06:05,456 22532 INFO ? werkzeug: 127.0.0.1 - - [02/Jul/2026 04:06:05] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.100
+2026-07-02 04:09:07,942 22532 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-02 04:09:07,943 22532 INFO ? werkzeug: 127.0.0.1 - - [02/Jul/2026 04:09:07] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.097
+2026-07-03 03:47:04,630 22532 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-03 03:47:04,634 22532 INFO ? werkzeug: 127.0.0.1 - - [03/Jul/2026 03:47:04] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.112
+2026-07-04 10:32:58,023 22532 INFO ? odoo.service.server: Initiating shutdown 
+2026-07-04 10:32:58,029 22532 INFO ? odoo.service.server: Hit CTRL-C again or send a second signal to force the shutdown. 
+2026-07-04 10:33:32,004 7224 INFO ? odoo: Odoo version 19.0-20260701 
+2026-07-04 10:33:32,004 7224 INFO ? odoo: Using configuration file at c:\program files\odoo 19.0.20260701\server\odoo.conf 
+2026-07-04 10:33:32,004 7224 INFO ? odoo: addons paths: _NamespacePath(['C:\\Program Files\\Odoo 19.0.20260701\\server\\odoo\\addons', 'c:\\users\\asus\\appdata\\local\\openerp s.a\\odoo\\addons\\19.0', 'c:\\program files\\odoo 19.0.20260701\\server\\odoo\\addons', 'c:\\program files\\odoo 19.0.20260701\\server\\addons']) 
+2026-07-04 10:33:32,006 7224 INFO ? odoo: database: openpg@localhost:5432 
+2026-07-04 10:33:33,200 7224 INFO ? odoo.service.server: HTTP service (werkzeug) running on LAPTOP-FTKB6NRN:8069 
+2026-07-04 10:33:33,329 7224 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-04 10:33:33,372 7224 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-04 14:39:39,166 8040 INFO ? odoo: Odoo version 19.0-20260701 
+2026-07-04 14:39:39,166 8040 INFO ? odoo: Using configuration file at c:\program files\odoo 19.0.20260701\server\odoo.conf 
+2026-07-04 14:39:39,166 8040 INFO ? odoo: addons paths: _NamespacePath(['C:\\Program Files\\Odoo 19.0.20260701\\server\\odoo\\addons', 'c:\\users\\asus\\appdata\\local\\openerp s.a\\odoo\\addons\\19.0', 'c:\\program files\\odoo 19.0.20260701\\server\\odoo\\addons', 'c:\\program files\\odoo 19.0.20260701\\server\\addons']) 
+2026-07-04 14:39:39,166 8040 INFO ? odoo: database: openpg@localhost:5432 
+2026-07-04 14:39:41,270 8040 INFO ? odoo.service.server: HTTP service (werkzeug) running on LAPTOP-FTKB6NRN:8069 
+2026-07-04 14:39:41,356 8040 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-04 14:39:41,423 8040 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-05 09:38:20,319 7696 INFO ? odoo: Odoo version 19.0-20260701 
+2026-07-05 09:38:20,321 7696 INFO ? odoo: Using configuration file at c:\program files\odoo 19.0.20260701\server\odoo.conf 
+2026-07-05 09:38:20,321 7696 INFO ? odoo: addons paths: _NamespacePath(['C:\\Program Files\\Odoo 19.0.20260701\\server\\odoo\\addons', 'c:\\users\\asus\\appdata\\local\\openerp s.a\\odoo\\addons\\19.0', 'c:\\program files\\odoo 19.0.20260701\\server\\odoo\\addons', 'c:\\program files\\odoo 19.0.20260701\\server\\addons']) 
+2026-07-05 09:38:20,321 7696 INFO ? odoo: database: openpg@localhost:5432 
+2026-07-05 09:38:22,274 7696 INFO ? odoo.service.server: HTTP service (werkzeug) running on LAPTOP-FTKB6NRN:8069 
+2026-07-05 09:38:22,359 7696 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-05 09:38:22,432 7696 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-05 16:46:58,987 7696 INFO ? odoo.service.server: Initiating shutdown 
+2026-07-05 16:46:58,995 7696 INFO ? odoo.service.server: Hit CTRL-C again or send a second signal to force the shutdown. 
+2026-07-06 02:18:13,443 7216 INFO ? odoo: Odoo version 19.0-20260701 
+2026-07-06 02:18:13,445 7216 INFO ? odoo: Using configuration file at c:\program files\odoo 19.0.20260701\server\odoo.conf 
+2026-07-06 02:18:13,445 7216 INFO ? odoo: addons paths: _NamespacePath(['C:\\Program Files\\Odoo 19.0.20260701\\server\\odoo\\addons', 'c:\\users\\asus\\appdata\\local\\openerp s.a\\odoo\\addons\\19.0', 'c:\\program files\\odoo 19.0.20260701\\server\\odoo\\addons', 'c:\\program files\\odoo 19.0.20260701\\server\\addons']) 
+2026-07-06 02:18:13,445 7216 INFO ? odoo: database: openpg@localhost:5432 
+2026-07-06 02:18:14,070 7216 INFO ? odoo.service.server: HTTP service (werkzeug) running on LAPTOP-FTKB6NRN:8069 
+2026-07-06 02:18:14,139 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 02:18:14,191 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 05:40:25,067 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 05:40:25,114 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 05:40:25] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.142
+2026-07-06 05:40:28,932 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 05:40:28,933 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 05:40:28] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.135
+2026-07-06 05:40:34,723 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 05:40:34,723 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 05:40:34] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.033
+2026-07-06 05:40:43,821 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 05:40:43,825 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 05:40:43] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.034
+2026-07-06 05:40:58,285 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 05:40:58,285 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 05:40:58] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.028
+2026-07-06 05:41:20,133 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 05:41:20,133 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 05:41:20] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.028
+2026-07-06 05:41:52,793 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 05:41:52,799 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 05:41:52] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.033
+2026-07-06 05:42:41,815 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 05:42:41,815 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 05:42:41] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.035
+2026-07-06 05:43:43,082 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 05:43:43,082 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 05:43:43] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.028
+2026-07-06 05:44:44,124 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 05:44:44,130 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 05:44:44] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.131
+2026-07-06 05:45:45,000 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 05:45:45,000 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 05:45:45] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.028
+2026-07-06 05:46:46,301 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 05:46:46,306 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 05:46:46] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.034
+2026-07-06 05:47:35,609 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 05:47:35,634 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 05:47:35,634 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 05:47:35] "GET /odoo/dashboards?dashboard_id=1 HTTP/1.1" 303 - 0 0.000 0.159
+2026-07-06 05:47:35,678 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 05:47:36,120 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 05:47:36,196 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 05:47:36] "GET /web/database/selector HTTP/1.1" 200 - 0 0.000 0.547
+2026-07-06 05:47:36,253 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 05:47:36,258 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 05:47:36] "GET /web/static/src/libs/fontawesome/css/font-awesome.css HTTP/1.1" 200 - 0 0.000 0.036
+2026-07-06 05:47:36,558 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 05:47:36,565 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 05:47:36] "GET /web/static/lib/bootstrap/js/dist/util/index.js HTTP/1.1" 200 - 0 0.000 0.035
+2026-07-06 05:47:36,593 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 05:47:36,593 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 05:47:36] "GET /web/static/lib/bootstrap/dist/css/bootstrap.css HTTP/1.1" 200 - 0 0.000 0.062
+2026-07-06 05:47:36,627 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 05:47:36,629 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 05:47:36] "GET /web/static/lib/bootstrap/js/dist/dom/data.js HTTP/1.1" 200 - 0 0.000 0.099
+2026-07-06 05:47:36,655 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 05:47:36,662 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 05:47:36] "GET /web/static/lib/bootstrap/js/dist/dom/event-handler.js HTTP/1.1" 200 - 0 0.000 0.131
+2026-07-06 05:47:36,690 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 05:47:36,690 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 05:47:36] "GET /web/static/lib/bootstrap/js/dist/dom/manipulator.js HTTP/1.1" 200 - 0 0.000 0.160
+2026-07-06 05:47:36,723 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 05:47:36,724 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 05:47:36] "GET /web/static/lib/bootstrap/js/dist/dom/selector-engine.js HTTP/1.1" 200 - 0 0.000 0.159
+2026-07-06 05:47:36,903 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 05:47:36,905 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 05:47:36] "GET /web/static/lib/bootstrap/js/dist/util/config.js HTTP/1.1" 200 - 0 0.000 0.034
+2026-07-06 05:47:36,936 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 05:47:36,937 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 05:47:36] "GET /web/static/lib/bootstrap/js/dist/util/component-functions.js HTTP/1.1" 200 - 0 0.000 0.032
+2026-07-06 05:47:36,967 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 05:47:36,968 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 05:47:36] "GET /web/static/lib/bootstrap/js/dist/util/backdrop.js HTTP/1.1" 200 - 0 0.000 0.031
+2026-07-06 05:47:37,001 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 05:47:37,002 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 05:47:37] "GET /web/static/lib/bootstrap/js/dist/util/focustrap.js HTTP/1.1" 200 - 0 0.000 0.031
+2026-07-06 05:47:37,033 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 05:47:37,034 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 05:47:37] "GET /web/static/lib/bootstrap/js/dist/util/scrollbar.js HTTP/1.1" 200 - 0 0.000 0.030
+2026-07-06 05:47:37,065 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 05:47:37,067 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 05:47:37] "GET /web/static/lib/bootstrap/js/dist/base-component.js HTTP/1.1" 200 - 0 0.000 0.032
+2026-07-06 05:47:37,242 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 05:47:37,244 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 05:47:37] "GET /web/static/lib/bootstrap/js/dist/modal.js HTTP/1.1" 200 - 0 0.000 0.032
+2026-07-06 05:47:37,276 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 05:47:37,277 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 05:47:37] "GET /web/static/src/public/database_manager.js HTTP/1.1" 200 - 0 0.000 0.030
+2026-07-06 05:47:37,310 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 05:47:37,312 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 05:47:37] "GET /web/static/img/logo2.png HTTP/1.1" 200 - 0 0.000 0.034
+2026-07-06 05:47:37,674 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 05:47:37,676 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 05:47:37] "GET /web/static/img/favicon.ico HTTP/1.1" 200 - 0 0.000 0.036
+2026-07-06 05:48:28,532 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 05:48:29,351 7216 ERROR None odoo.addons.web.controllers.database: Database creation error. 
+Traceback (most recent call last):
+  File "C:\Program Files\Odoo 19.0.20260701\server\odoo\addons\web\controllers\database.py", line 81, in create
+    dispatch_rpc('db', 'create_database', [master_pwd, name, bool(post.get('demo')), lang, password, post['login'], country_code, post['phone']])
+  File "C:\Program Files\Odoo 19.0.20260701\server\odoo\http.py", line 449, in dispatch_rpc
+    return dispatch(method, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Odoo 19.0.20260701\server\odoo\service\db.py", line 518, in dispatch
+    check_super(passwd)
+  File "C:\Program Files\Odoo 19.0.20260701\server\odoo\service\db.py", line 63, in check_super
+    raise odoo.exceptions.AccessDenied()
+odoo.exceptions.AccessDenied: Access Denied
+2026-07-06 05:48:29,802 7216 INFO None odoo.sql_db: Connection to the database failed 
+2026-07-06 05:48:29,828 7216 INFO None werkzeug: 127.0.0.1 - - [06/Jul/2026 05:48:29] "POST /web/database/create HTTP/1.1" 200 - 0 0.000 1.324
+2026-07-06 05:49:46,714 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 05:49:47,530 7216 ERROR None odoo.addons.web.controllers.database: Database creation error. 
+Traceback (most recent call last):
+  File "C:\Program Files\Odoo 19.0.20260701\server\odoo\addons\web\controllers\database.py", line 81, in create
+    dispatch_rpc('db', 'create_database', [master_pwd, name, bool(post.get('demo')), lang, password, post['login'], country_code, post['phone']])
+  File "C:\Program Files\Odoo 19.0.20260701\server\odoo\http.py", line 449, in dispatch_rpc
+    return dispatch(method, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Odoo 19.0.20260701\server\odoo\service\db.py", line 518, in dispatch
+    check_super(passwd)
+  File "C:\Program Files\Odoo 19.0.20260701\server\odoo\service\db.py", line 63, in check_super
+    raise odoo.exceptions.AccessDenied()
+odoo.exceptions.AccessDenied: Access Denied
+2026-07-06 05:49:47,957 7216 INFO None odoo.sql_db: Connection to the database failed 
+2026-07-06 05:49:47,985 7216 INFO None werkzeug: 127.0.0.1 - - [06/Jul/2026 05:49:47] "POST /web/database/create HTTP/1.1" 200 - 0 0.000 1.304
+2026-07-06 05:50:39,445 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 05:50:40,278 7216 ERROR None odoo.addons.web.controllers.database: Database creation error. 
+Traceback (most recent call last):
+  File "C:\Program Files\Odoo 19.0.20260701\server\odoo\addons\web\controllers\database.py", line 81, in create
+    dispatch_rpc('db', 'create_database', [master_pwd, name, bool(post.get('demo')), lang, password, post['login'], country_code, post['phone']])
+  File "C:\Program Files\Odoo 19.0.20260701\server\odoo\http.py", line 449, in dispatch_rpc
+    return dispatch(method, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Odoo 19.0.20260701\server\odoo\service\db.py", line 518, in dispatch
+    check_super(passwd)
+  File "C:\Program Files\Odoo 19.0.20260701\server\odoo\service\db.py", line 63, in check_super
+    raise odoo.exceptions.AccessDenied()
+odoo.exceptions.AccessDenied: Access Denied
+2026-07-06 05:50:40,723 7216 INFO None odoo.sql_db: Connection to the database failed 
+2026-07-06 05:50:40,746 7216 INFO None werkzeug: 127.0.0.1 - - [06/Jul/2026 05:50:40] "POST /web/database/create HTTP/1.1" 200 - 0 0.000 1.330
+2026-07-06 05:50:43,129 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 05:50:43,129 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 05:50:43] "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 - 0 0.000 0.033
+2026-07-06 05:50:43,507 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 05:50:43,508 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 05:50:43] "GET /web/static/lib/bootstrap/js/dist/util/index.js.map HTTP/1.1" 404 - 0 0.000 0.042
+2026-07-06 05:50:43,540 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 05:50:43,541 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 05:50:43] "GET /web/static/lib/bootstrap/js/dist/dom/data.js.map HTTP/1.1" 404 - 0 0.000 0.074
+2026-07-06 05:50:43,575 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 05:50:43,575 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 05:50:43] "GET /web/static/lib/bootstrap/js/dist/dom/event-handler.js.map HTTP/1.1" 404 - 0 0.000 0.108
+2026-07-06 05:50:43,609 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 05:50:43,609 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 05:50:43] "GET /web/static/lib/bootstrap/js/dist/dom/manipulator.js.map HTTP/1.1" 404 - 0 0.000 0.141
+2026-07-06 05:50:43,642 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 05:50:43,643 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 05:50:43] "GET /web/static/lib/bootstrap/js/dist/dom/selector-engine.js.map HTTP/1.1" 404 - 0 0.000 0.175
+2026-07-06 05:50:43,677 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 05:50:43,677 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 05:50:43] "GET /web/static/lib/bootstrap/js/dist/util/config.js.map HTTP/1.1" 404 - 0 0.000 0.209
+2026-07-06 05:50:43,845 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 05:50:43,846 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 05:50:43] "GET /web/static/lib/bootstrap/js/dist/util/component-functions.js.map HTTP/1.1" 404 - 0 0.000 0.035
+2026-07-06 05:50:43,974 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 05:50:43,974 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 05:50:43] "GET /web/static/lib/bootstrap/js/dist/util/backdrop.js.map HTTP/1.1" 404 - 0 0.000 0.129
+2026-07-06 05:50:44,006 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 05:50:44,006 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 05:50:44] "GET /web/static/lib/bootstrap/js/dist/util/focustrap.js.map HTTP/1.1" 404 - 0 0.000 0.125
+2026-07-06 05:50:44,132 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 05:50:44,132 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 05:50:44] "GET /web/static/lib/bootstrap/js/dist/util/scrollbar.js.map HTTP/1.1" 404 - 0 0.000 0.209
+2026-07-06 05:50:44,167 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 05:50:44,167 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 05:50:44] "GET /web/static/lib/bootstrap/js/dist/base-component.js.map HTTP/1.1" 404 - 0 0.000 0.212
+2026-07-06 05:50:44,195 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 05:50:44,195 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 05:50:44] "GET /web/static/lib/bootstrap/js/dist/modal.js.map HTTP/1.1" 404 - 0 0.000 0.216
+2026-07-06 05:50:44,215 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 05:50:44,215 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 05:50:44] "GET /web/sourceMap/chrome/css/interactive_balloon.css.map HTTP/1.1" 404 - 0 0.000 0.062
+2026-07-06 05:50:44,299 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 05:50:44,299 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 05:50:44] "GET /web/static/lib/bootstrap/dist/css/bootstrap.css.map HTTP/1.1" 200 - 0 0.000 0.021
+2026-07-06 05:50:44,346 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 05:50:44,347 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 05:50:44] "GET /web/sourceMap/chrome/css/advanced_protection_signal.css.map HTTP/1.1" 404 - 0 0.000 0.032
+2026-07-06 06:43:25,966 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 06:43:25,968 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 06:43:25] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.036
+2026-07-06 06:43:30,090 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 06:43:30,090 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 06:43:30] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.034
+2026-07-06 06:43:36,277 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 06:43:36,277 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 06:43:36] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.033
+2026-07-06 06:43:46,255 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 06:43:46,255 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 06:43:46] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.036
+2026-07-06 06:44:01,486 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 06:44:01,487 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 06:44:01] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.033
+2026-07-06 06:44:25,081 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 06:44:25,082 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 06:44:25] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.033
+2026-07-06 06:47:33,308 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 06:47:33,308 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 06:47:33] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.039
+2026-07-06 06:47:39,147 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 06:47:39,147 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 06:47:39] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.033
+2026-07-06 06:47:48,605 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 06:47:48,606 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 06:47:48] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.035
+2026-07-06 06:48:02,923 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 06:48:02,924 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 06:48:02] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.034
+2026-07-06 06:48:24,976 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 06:48:24,976 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 06:48:24] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.034
+2026-07-06 06:48:58,319 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 06:48:58,320 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 06:48:58] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.032
+2026-07-06 06:49:49,122 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 06:49:49,122 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 06:49:49] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.035
+2026-07-06 06:50:49,851 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 06:50:49,853 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 06:50:49] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.036
+2026-07-06 06:51:51,188 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 06:51:51,189 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 06:51:51] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.032
+2026-07-06 06:52:51,653 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 06:52:51,654 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 06:52:51] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.031
+2026-07-06 06:53:52,917 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 06:53:52,917 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 06:53:52] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.062
+2026-07-06 06:54:53,973 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 06:54:53,974 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 06:54:53] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.031
+2026-07-06 06:55:55,090 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 06:55:55,091 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 06:55:55] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.048
+2026-07-06 06:56:55,595 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 06:56:55,596 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 06:56:55] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.032
+2026-07-06 06:57:56,585 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 06:57:56,586 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 06:57:56] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.031
+2026-07-06 06:58:57,404 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 06:58:57,404 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 06:58:57] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.034
+2026-07-06 06:59:58,623 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 06:59:58,624 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 06:59:58] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.032
+2026-07-06 07:00:59,474 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 07:00:59,474 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 07:00:59] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.032
+2026-07-06 07:02:00,540 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 07:02:00,541 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 07:02:00] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.036
+2026-07-06 07:03:01,589 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 07:03:01,589 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 07:03:01] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.031
+2026-07-06 07:04:02,739 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 07:04:02,742 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 07:04:02] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.053
+2026-07-06 07:05:04,095 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 07:05:04,096 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 07:05:04] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.033
+2026-07-06 07:06:05,065 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 07:06:05,065 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 07:06:05] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.041
+2026-07-06 07:07:05,660 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 07:07:05,661 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 07:07:05] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.056
+2026-07-06 07:08:06,198 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 07:08:06,198 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 07:08:06] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.136
+2026-07-06 07:09:07,235 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 07:09:07,236 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 07:09:07] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.149
+2026-07-06 07:10:07,805 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 07:10:07,806 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 07:10:07] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.031
+2026-07-06 07:11:08,793 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 07:11:08,793 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 07:11:08] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.144
+2026-07-06 07:12:09,507 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 07:12:09,507 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 07:12:09] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.147
+2026-07-06 07:13:10,007 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 07:13:10,007 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 07:13:10] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.046
+2026-07-06 07:14:10,549 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 07:14:10,549 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 07:14:10] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.067
+2026-07-06 07:15:11,076 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 07:15:11,077 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 07:15:11] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.148
+2026-07-06 07:16:12,288 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 07:16:12,288 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 07:16:12] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.030
+2026-07-06 07:17:13,075 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 07:17:13,075 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 07:17:13] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.041
+2026-07-06 07:18:14,044 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 07:18:14,045 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 07:18:14] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.040
+2026-07-06 07:19:14,830 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 07:19:14,830 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 07:19:14] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.050
+2026-07-06 07:20:15,843 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 07:20:15,843 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 07:20:15] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.042
+2026-07-06 07:21:16,555 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 07:21:16,555 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 07:21:16] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.030
+2026-07-06 07:22:17,018 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 07:22:17,019 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 07:22:17] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.041
+2026-07-06 07:23:17,459 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 07:23:17,460 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 07:23:17] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.032
+2026-07-06 07:24:18,583 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 07:24:18,583 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 07:24:18] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.042
+2026-07-06 07:25:19,731 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 07:25:19,732 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 07:25:19] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.043
+2026-07-06 07:26:20,680 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 07:26:20,682 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 07:26:20] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.050
+2026-07-06 07:27:21,448 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 07:27:21,448 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 07:27:21] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.031
+2026-07-06 07:28:22,773 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 07:28:22,775 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 07:28:22] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.046
+2026-07-06 07:29:23,946 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 07:29:23,946 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 07:29:23] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.148
+2026-07-06 07:30:24,529 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 07:30:24,530 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 07:30:24] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.031
+2026-07-06 07:31:25,554 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 07:31:25,554 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 07:31:25] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.044
+2026-07-06 07:32:26,687 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 07:32:26,687 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 07:32:26] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.040
+2026-07-06 07:33:27,684 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 07:33:27,684 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 07:33:27] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.035
+2026-07-06 07:34:28,297 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 07:34:28,297 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 07:34:28] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.046
+2026-07-06 07:35:29,438 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 07:35:29,440 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 07:35:29] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.048
+2026-07-06 07:36:30,738 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 07:36:30,738 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 07:36:30] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.032
+2026-07-06 07:37:31,558 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 07:37:31,559 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 07:37:31] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.032
+2026-07-06 07:38:32,713 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 07:38:32,713 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 07:38:32] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.024
+2026-07-06 07:39:33,301 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 07:39:33,301 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 07:39:33] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.016
+2026-07-06 07:40:34,305 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 07:40:34,305 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 07:40:34] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.033
+2026-07-06 07:41:34,915 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 07:41:34,915 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 07:41:34] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.031
+2026-07-06 07:42:36,040 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 07:42:36,040 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 07:42:36] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.032
+2026-07-06 07:43:36,544 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 07:43:36,544 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 07:43:36] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.034
+2026-07-06 07:44:37,572 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 07:44:37,572 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 07:44:37] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.032
+2026-07-06 07:45:38,743 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 07:45:38,743 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 07:45:38] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.032
+2026-07-06 07:46:39,463 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 07:46:39,463 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 07:46:39] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.032
+2026-07-06 07:47:40,301 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 07:47:40,301 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 07:47:40] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.031
+2026-07-06 07:48:41,255 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 07:48:41,266 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 07:48:41] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.030
+2026-07-06 11:34:48,489 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 11:34:48,489 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 11:34:48] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.066
+2026-07-06 12:35:04,224 7216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-06 12:35:04,225 7216 INFO ? werkzeug: 127.0.0.1 - - [06/Jul/2026 12:35:04] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.378
+2026-07-07 02:25:35,315 7288 INFO ? odoo: Odoo version 19.0-20260701 
+2026-07-07 02:25:35,315 7288 INFO ? odoo: Using configuration file at c:\program files\odoo 19.0.20260701\server\odoo.conf 
+2026-07-07 02:25:35,315 7288 INFO ? odoo: addons paths: _NamespacePath(['C:\\Program Files\\Odoo 19.0.20260701\\server\\odoo\\addons', 'c:\\users\\asus\\appdata\\local\\openerp s.a\\odoo\\addons\\19.0', 'c:\\program files\\odoo 19.0.20260701\\server\\odoo\\addons', 'c:\\program files\\odoo 19.0.20260701\\server\\addons']) 
+2026-07-07 02:25:35,315 7288 INFO ? odoo: database: openpg@localhost:5432 
+2026-07-07 02:25:36,222 7288 INFO ? odoo.service.server: HTTP service (werkzeug) running on LAPTOP-FTKB6NRN:8069 
+2026-07-07 02:25:36,293 7288 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-07 02:25:36,328 7288 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-07 02:27:50,266 7288 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-07 02:27:50,404 7288 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-07 02:27:50,406 7288 INFO ? werkzeug: 127.0.0.1 - - [07/Jul/2026 02:27:50] "GET /odoo/customer-invoices/2 HTTP/1.1" 303 - 0 0.000 0.257
+2026-07-07 02:27:50,489 7288 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-07 02:27:52,327 7288 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-07 02:27:52,422 7288 INFO ? werkzeug: 127.0.0.1 - - [07/Jul/2026 02:27:52] "GET /web/database/selector HTTP/1.1" 200 - 0 0.000 2.008
+2026-07-07 02:27:52,531 7288 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-07 02:27:52,535 7288 INFO ? werkzeug: 127.0.0.1 - - [07/Jul/2026 02:27:52] "GET /web/static/src/libs/fontawesome/css/font-awesome.css HTTP/1.1" 200 - 0 0.000 0.091
+2026-07-07 02:27:52,864 7288 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-07 02:27:52,870 7288 INFO ? werkzeug: 127.0.0.1 - - [07/Jul/2026 02:27:52] "GET /web/static/lib/bootstrap/dist/css/bootstrap.css HTTP/1.1" 200 - 0 0.000 0.116
+2026-07-07 02:27:52,969 7288 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-07 02:27:52,973 7288 INFO ? werkzeug: 127.0.0.1 - - [07/Jul/2026 02:27:52] "GET /web/static/lib/bootstrap/js/dist/util/index.js HTTP/1.1" 200 - 0 0.000 0.219
+2026-07-07 02:27:53,059 7288 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-07 02:27:53,063 7288 INFO ? werkzeug: 127.0.0.1 - - [07/Jul/2026 02:27:53] "GET /web/static/lib/bootstrap/js/dist/dom/data.js HTTP/1.1" 200 - 0 0.000 0.126
+2026-07-07 02:27:53,286 7288 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-07 02:27:53,288 7288 INFO ? werkzeug: 127.0.0.1 - - [07/Jul/2026 02:27:53] "GET /web/static/lib/bootstrap/js/dist/dom/event-handler.js HTTP/1.1" 200 - 0 0.000 0.100
+2026-07-07 02:27:53,373 7288 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-07 02:27:53,376 7288 INFO ? werkzeug: 127.0.0.1 - - [07/Jul/2026 02:27:53] "GET /web/static/lib/bootstrap/js/dist/dom/manipulator.js HTTP/1.1" 200 - 0 0.000 0.086
+2026-07-07 02:27:53,454 7288 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-07 02:27:53,461 7288 INFO ? werkzeug: 127.0.0.1 - - [07/Jul/2026 02:27:53] "GET /web/static/lib/bootstrap/js/dist/dom/selector-engine.js HTTP/1.1" 200 - 0 0.000 0.085
+2026-07-07 02:27:53,718 7288 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-07 02:27:53,722 7288 INFO ? werkzeug: 127.0.0.1 - - [07/Jul/2026 02:27:53] "GET /web/static/lib/bootstrap/js/dist/util/config.js HTTP/1.1" 200 - 0 0.000 0.116
+2026-07-07 02:27:53,875 7288 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-07 02:27:53,879 7288 INFO ? werkzeug: 127.0.0.1 - - [07/Jul/2026 02:27:53] "GET /web/static/lib/bootstrap/js/dist/util/component-functions.js HTTP/1.1" 200 - 0 0.000 0.187
+2026-07-07 02:27:53,961 7288 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-07 02:27:53,962 7288 INFO ? werkzeug: 127.0.0.1 - - [07/Jul/2026 02:27:53] "GET /web/static/lib/bootstrap/js/dist/util/backdrop.js HTTP/1.1" 200 - 0 0.000 0.184
+2026-07-07 02:27:54,131 7288 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-07 02:27:54,133 7288 INFO ? werkzeug: 127.0.0.1 - - [07/Jul/2026 02:27:54] "GET /web/static/lib/bootstrap/js/dist/util/focustrap.js HTTP/1.1" 200 - 0 0.000 0.096
+2026-07-07 02:27:54,289 7288 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-07 02:27:54,291 7288 INFO ? werkzeug: 127.0.0.1 - - [07/Jul/2026 02:27:54] "GET /web/static/lib/bootstrap/js/dist/util/scrollbar.js HTTP/1.1" 200 - 0 0.000 0.096
+2026-07-07 02:27:54,392 7288 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-07 02:27:54,394 7288 INFO ? werkzeug: 127.0.0.1 - - [07/Jul/2026 02:27:54] "GET /web/static/lib/bootstrap/js/dist/base-component.js HTTP/1.1" 200 - 0 0.000 0.116
+2026-07-07 02:27:54,537 7288 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-07 02:27:54,540 7288 INFO ? werkzeug: 127.0.0.1 - - [07/Jul/2026 02:27:54] "GET /web/static/lib/bootstrap/js/dist/modal.js HTTP/1.1" 200 - 0 0.000 0.093
+2026-07-07 02:27:54,708 7288 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-07 02:27:54,710 7288 INFO ? werkzeug: 127.0.0.1 - - [07/Jul/2026 02:27:54] "GET /web/static/src/public/database_manager.js HTTP/1.1" 200 - 0 0.000 0.097
+2026-07-07 02:27:54,806 7288 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-07 02:27:54,811 7288 INFO ? werkzeug: 127.0.0.1 - - [07/Jul/2026 02:27:54] "GET /web/static/img/logo2.png HTTP/1.1" 200 - 0 0.000 0.197
+2026-07-07 02:27:55,172 7288 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-07 02:27:55,177 7288 INFO ? werkzeug: 127.0.0.1 - - [07/Jul/2026 02:27:55] "GET /web/static/src/libs/fontawesome/fonts/fontawesome-webfont.woff2?v=4.7.0 HTTP/1.1" 200 - 0 0.000 0.088
+2026-07-07 02:39:59,152 7288 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-07 02:40:03,802 7288 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-07 02:40:03,876 7288 INFO ? werkzeug: 127.0.0.1 - - [07/Jul/2026 02:40:03] "POST /web/database/restore HTTP/1.1" 200 - 0 0.000 4.829
+2026-07-07 02:40:45,236 7288 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-07 02:40:45,238 7288 INFO ? werkzeug: 127.0.0.1 - - [07/Jul/2026 02:40:45] "GET /web/service-worker.js HTTP/1.1" 404 - 0 0.000 0.078
+2026-07-07 03:01:26,899 7288 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-07 03:01:26,902 7288 INFO ? werkzeug: 127.0.0.1 - - [07/Jul/2026 03:01:26] "GET / HTTP/1.1" 303 - 0 0.000 0.113
+2026-07-07 03:01:26,994 7288 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-07 03:01:27,071 7288 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-07 03:01:27,075 7288 INFO ? werkzeug: 127.0.0.1 - - [07/Jul/2026 03:01:27] "GET /odoo HTTP/1.1" 303 - 0 0.000 0.154
+2026-07-07 03:01:27,173 7288 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-07 03:01:28,980 7288 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-07 03:01:29,063 7288 INFO ? werkzeug: 127.0.0.1 - - [07/Jul/2026 03:01:29] "GET /web/database/selector HTTP/1.1" 200 - 0 0.000 1.975
+2026-07-07 03:02:02,946 7288 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-07 03:02:05,988 7288 ERROR None odoo.addons.web.controllers.database: Database creation error. 
+Traceback (most recent call last):
+  File "C:\Program Files\Odoo 19.0.20260701\server\odoo\addons\web\controllers\database.py", line 81, in create
+    dispatch_rpc('db', 'create_database', [master_pwd, name, bool(post.get('demo')), lang, password, post['login'], country_code, post['phone']])
+  File "C:\Program Files\Odoo 19.0.20260701\server\odoo\http.py", line 449, in dispatch_rpc
+    return dispatch(method, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Odoo 19.0.20260701\server\odoo\service\db.py", line 518, in dispatch
+    check_super(passwd)
+  File "C:\Program Files\Odoo 19.0.20260701\server\odoo\service\db.py", line 63, in check_super
+    raise odoo.exceptions.AccessDenied()
+odoo.exceptions.AccessDenied: Access Denied
+2026-07-07 03:02:07,734 7288 INFO None odoo.sql_db: Connection to the database failed 
+2026-07-07 03:02:07,820 7288 INFO None werkzeug: 127.0.0.1 - - [07/Jul/2026 03:02:07] "POST /web/database/create HTTP/1.1" 200 - 0 0.000 4.970
+2026-07-07 03:04:31,974 7288 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-07 03:04:36,220 7288 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-07 03:04:36,275 7288 INFO ? werkzeug: 127.0.0.1 - - [07/Jul/2026 03:04:36] "POST /web/database/restore HTTP/1.1" 200 - 0 0.000 4.383
+2026-07-07 03:06:36,281 7288 WARNING ? odoo.service.server: Thread <Thread(odoo.service.http.request.27804, started 27804)> virtual real time limit (124/120s) reached. 
+2026-07-07 03:06:36,281 7288 WARNING ? odoo.service.server: Thread <Thread(odoo.service.http.request.8108, started 8108)> virtual real time limit (124/120s) reached. 
+2026-07-07 03:06:36,283 7288 INFO ? odoo.service.server: Dumping stacktrace of limit exceeding threads before reloading 
+2026-07-07 03:06:36,306 7288 INFO ? odoo.tools.misc: 
+# Thread: <Thread(odoo.service.http.request.8108, started 8108)> (db:n/a) (uid:n/a) (url:n/a) (qc:n/a qt:n/a pt:n/a)
+File: "C:\Program Files\Odoo 19.0.20260701\python\Lib\threading.py", line 1030, in _bootstrap
+  self._bootstrap_inner()
+File: "C:\Program Files\Odoo 19.0.20260701\python\Lib\threading.py", line 1073, in _bootstrap_inner
+  self.run()
+File: "C:\Program Files\Odoo 19.0.20260701\python\Lib\threading.py", line 1010, in run
+  self._target(*self._args, **self._kwargs)
+File: "C:\Program Files\Odoo 19.0.20260701\python\Lib\socketserver.py", line 692, in process_request_thread
+  self.finish_request(request, client_address)
+File: "C:\Program Files\Odoo 19.0.20260701\python\Lib\socketserver.py", line 362, in finish_request
+  self.RequestHandlerClass(request, client_address, self)
+File: "C:\Program Files\Odoo 19.0.20260701\server\odoo\service\server.py", line 132, in __init__
+  super().__init__(*args, **kwargs)
+File: "C:\Program Files\Odoo 19.0.20260701\python\Lib\socketserver.py", line 761, in __init__
+  self.handle()
+File: "C:\Program Files\Odoo 19.0.20260701\python\Lib\site-packages\werkzeug\serving.py", line 390, in handle
+  super().handle()
+File: "C:\Program Files\Odoo 19.0.20260701\python\Lib\http\server.py", line 436, in handle
+  self.handle_one_request()
+File: "C:\Program Files\Odoo 19.0.20260701\python\Lib\http\server.py", line 404, in handle_one_request
+  self.raw_requestline = self.rfile.readline(65537)
+File: "C:\Program Files\Odoo 19.0.20260701\python\Lib\socket.py", line 707, in readinto
+  return self._sock.recv_into(b)
+
+# Thread: <Thread(odoo.service.http.request.27804, started 27804)> (db:n/a) (uid:n/a) (url:n/a) (qc:n/a qt:n/a pt:n/a)
+File: "C:\Program Files\Odoo 19.0.20260701\python\Lib\threading.py", line 1030, in _bootstrap
+  self._bootstrap_inner()
+File: "C:\Program Files\Odoo 19.0.20260701\python\Lib\threading.py", line 1073, in _bootstrap_inner
+  self.run()
+File: "C:\Program Files\Odoo 19.0.20260701\python\Lib\threading.py", line 1010, in run
+  self._target(*self._args, **self._kwargs)
+File: "C:\Program Files\Odoo 19.0.20260701\python\Lib\socketserver.py", line 692, in process_request_thread
+  self.finish_request(request, client_address)
+File: "C:\Program Files\Odoo 19.0.20260701\python\Lib\socketserver.py", line 362, in finish_request
+  self.RequestHandlerClass(request, client_address, self)
+File: "C:\Program Files\Odoo 19.0.20260701\server\odoo\service\server.py", line 132, in __init__
+  super().__init__(*args, **kwargs)
+File: "C:\Program Files\Odoo 19.0.20260701\python\Lib\socketserver.py", line 761, in __init__
+  self.handle()
+File: "C:\Program Files\Odoo 19.0.20260701\python\Lib\site-packages\werkzeug\serving.py", line 390, in handle
+  super().handle()
+File: "C:\Program Files\Odoo 19.0.20260701\python\Lib\http\server.py", line 436, in handle
+  self.handle_one_request()
+File: "C:\Program Files\Odoo 19.0.20260701\python\Lib\http\server.py", line 404, in handle_one_request
+  self.raw_requestline = self.rfile.readline(65537)
+File: "C:\Program Files\Odoo 19.0.20260701\python\Lib\socket.py", line 707, in readinto
+  return self._sock.recv_into(b) 
+2026-07-07 03:06:38,553 29216 INFO ? odoo: Odoo version 19.0-20260701 
+2026-07-07 03:06:38,553 29216 INFO ? odoo: Using configuration file at c:\program files\odoo 19.0.20260701\server\odoo.conf 
+2026-07-07 03:06:38,553 29216 INFO ? odoo: addons paths: _NamespacePath(['C:\\Program Files\\Odoo 19.0.20260701\\server\\odoo\\addons', 'c:\\users\\asus\\appdata\\local\\openerp s.a\\odoo\\addons\\19.0', 'c:\\program files\\odoo 19.0.20260701\\server\\odoo\\addons', 'c:\\program files\\odoo 19.0.20260701\\server\\addons']) 
+2026-07-07 03:06:38,553 29216 INFO ? odoo: database: openpg@localhost:5432 
+2026-07-07 03:06:40,080 29216 INFO ? odoo.service.server: HTTP service (werkzeug) running on LAPTOP-FTKB6NRN:8069 
+2026-07-07 03:06:40,156 29216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-07 03:06:40,225 29216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-07 03:12:09,290 29216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-07 03:12:09,333 29216 INFO ? werkzeug: 127.0.0.1 - - [07/Jul/2026 03:12:09] "GET /web/service-worker.js HTTP/1.1" 404 - 0 0.000 0.127
+2026-07-07 03:12:25,238 29216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-07 03:12:29,577 29216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-07 03:12:29,668 29216 INFO ? werkzeug: 127.0.0.1 - - [07/Jul/2026 03:12:29] "POST /web/database/restore HTTP/1.1" 200 - 0 0.000 4.499
+2026-07-07 03:15:22,310 29216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-07 03:15:22,310 29216 INFO ? werkzeug: 127.0.0.1 - - [07/Jul/2026 03:15:22] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.071
+2026-07-07 04:21:25,111 29216 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-07 04:21:25,115 29216 INFO ? werkzeug: 127.0.0.1 - - [07/Jul/2026 04:21:25] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.098
+2026-07-08 02:33:12,539 7028 INFO ? odoo: Odoo version 19.0-20260701 
+2026-07-08 02:33:12,549 7028 INFO ? odoo: Using configuration file at c:\program files\odoo 19.0.20260701\server\odoo.conf 
+2026-07-08 02:33:12,549 7028 INFO ? odoo: addons paths: _NamespacePath(['C:\\Program Files\\Odoo 19.0.20260701\\server\\odoo\\addons', 'c:\\users\\asus\\appdata\\local\\openerp s.a\\odoo\\addons\\19.0', 'c:\\program files\\odoo 19.0.20260701\\server\\odoo\\addons', 'c:\\program files\\odoo 19.0.20260701\\server\\addons']) 
+2026-07-08 02:33:12,549 7028 INFO ? odoo: database: openpg@localhost:5432 
+2026-07-08 02:33:13,654 7028 INFO ? odoo.service.server: HTTP service (werkzeug) running on LAPTOP-FTKB6NRN:8069 
+2026-07-08 02:33:13,723 7028 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-08 02:33:13,772 7028 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-08 02:35:51,475 7028 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-08 02:35:51,609 7028 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-08 02:35:51,609 7028 INFO ? werkzeug: 127.0.0.1 - - [08/Jul/2026 02:35:51] "GET /odoo/customer-invoices/7 HTTP/1.1" 303 - 0 0.000 0.272
+2026-07-08 02:35:51,694 7028 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-08 02:35:53,239 7028 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-08 02:35:53,337 7028 INFO ? werkzeug: 127.0.0.1 - - [08/Jul/2026 02:35:53] "GET /web/database/selector HTTP/1.1" 200 - 0 0.000 1.716
+2026-07-08 02:35:53,466 7028 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-08 02:35:53,471 7028 INFO ? werkzeug: 127.0.0.1 - - [08/Jul/2026 02:35:53] "GET /web/static/src/libs/fontawesome/css/font-awesome.css HTTP/1.1" 200 - 0 0.000 0.085
+2026-07-08 02:35:53,786 7028 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-08 02:35:53,790 7028 INFO ? werkzeug: 127.0.0.1 - - [08/Jul/2026 02:35:53] "GET /web/static/lib/bootstrap/dist/css/bootstrap.css HTTP/1.1" 200 - 0 0.000 0.094
+2026-07-08 02:35:53,862 7028 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-08 02:35:53,864 7028 INFO ? werkzeug: 127.0.0.1 - - [08/Jul/2026 02:35:53] "GET /web/static/lib/bootstrap/js/dist/util/index.js HTTP/1.1" 200 - 0 0.000 0.163
+2026-07-08 02:35:53,940 7028 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-08 02:35:53,942 7028 INFO ? werkzeug: 127.0.0.1 - - [08/Jul/2026 02:35:53] "GET /web/static/lib/bootstrap/js/dist/dom/data.js HTTP/1.1" 200 - 0 0.000 0.158
+2026-07-08 02:35:54,196 7028 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-08 02:35:54,198 7028 INFO ? werkzeug: 127.0.0.1 - - [08/Jul/2026 02:35:54] "GET /web/static/lib/bootstrap/js/dist/dom/event-handler.js HTTP/1.1" 200 - 0 0.000 0.095
+2026-07-08 02:35:54,284 7028 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-08 02:35:54,288 7028 INFO ? werkzeug: 127.0.0.1 - - [08/Jul/2026 02:35:54] "GET /web/static/lib/bootstrap/js/dist/dom/manipulator.js HTTP/1.1" 200 - 0 0.000 0.111
+2026-07-08 02:35:54,363 7028 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-08 02:35:54,365 7028 INFO ? werkzeug: 127.0.0.1 - - [08/Jul/2026 02:35:54] "GET /web/static/lib/bootstrap/js/dist/dom/selector-engine.js HTTP/1.1" 200 - 0 0.000 0.100
+2026-07-08 02:35:54,608 7028 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-08 02:35:54,611 7028 INFO ? werkzeug: 127.0.0.1 - - [08/Jul/2026 02:35:54] "GET /web/static/lib/bootstrap/js/dist/util/config.js HTTP/1.1" 200 - 0 0.000 0.101
+2026-07-08 02:35:54,718 7028 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-08 02:35:54,722 7028 INFO ? werkzeug: 127.0.0.1 - - [08/Jul/2026 02:35:54] "GET /web/static/lib/bootstrap/js/dist/util/component-functions.js HTTP/1.1" 200 - 0 0.000 0.116
+2026-07-08 02:35:54,819 7028 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-08 02:35:54,821 7028 INFO ? werkzeug: 127.0.0.1 - - [08/Jul/2026 02:35:54] "GET /web/static/lib/bootstrap/js/dist/util/backdrop.js HTTP/1.1" 200 - 0 0.000 0.129
+2026-07-08 02:35:55,018 7028 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-08 02:35:55,020 7028 INFO ? werkzeug: 127.0.0.1 - - [08/Jul/2026 02:35:55] "GET /web/static/lib/bootstrap/js/dist/util/focustrap.js HTTP/1.1" 200 - 0 0.000 0.093
+2026-07-08 02:35:55,124 7028 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-08 02:35:55,126 7028 INFO ? werkzeug: 127.0.0.1 - - [08/Jul/2026 02:35:55] "GET /web/static/lib/bootstrap/js/dist/util/scrollbar.js HTTP/1.1" 200 - 0 0.000 0.077
+2026-07-08 02:35:55,320 7028 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-08 02:35:55,324 7028 INFO ? werkzeug: 127.0.0.1 - - [08/Jul/2026 02:35:55] "GET /web/static/lib/bootstrap/js/dist/base-component.js HTTP/1.1" 200 - 0 0.000 0.192
+2026-07-08 02:35:55,415 7028 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-08 02:35:55,420 7028 INFO ? werkzeug: 127.0.0.1 - - [08/Jul/2026 02:35:55] "GET /web/static/lib/bootstrap/js/dist/modal.js HTTP/1.1" 200 - 0 0.000 0.083
+2026-07-08 02:35:55,530 7028 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-08 02:35:55,538 7028 INFO ? werkzeug: 127.0.0.1 - - [08/Jul/2026 02:35:55] "GET /web/static/src/public/database_manager.js HTTP/1.1" 200 - 0 0.000 0.087
+2026-07-08 02:35:55,604 7028 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-08 02:35:55,612 7028 INFO ? werkzeug: 127.0.0.1 - - [08/Jul/2026 02:35:55] "GET /web/static/img/logo2.png HTTP/1.1" 200 - 0 0.000 0.159
+2026-07-08 02:35:55,950 7028 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-08 02:35:55,952 7028 INFO ? werkzeug: 127.0.0.1 - - [08/Jul/2026 02:35:55] "GET /web/static/src/libs/fontawesome/fonts/fontawesome-webfont.woff2?v=4.7.0 HTTP/1.1" 200 - 0 0.000 0.080
+2026-07-09 03:05:15,615 7452 INFO ? odoo: Odoo version 19.0-20260701 
+2026-07-09 03:05:15,619 7452 INFO ? odoo: Using configuration file at c:\program files\odoo 19.0.20260701\server\odoo.conf 
+2026-07-09 03:05:15,619 7452 INFO ? odoo: addons paths: _NamespacePath(['C:\\Program Files\\Odoo 19.0.20260701\\server\\odoo\\addons', 'c:\\users\\asus\\appdata\\local\\openerp s.a\\odoo\\addons\\19.0', 'c:\\program files\\odoo 19.0.20260701\\server\\odoo\\addons', 'c:\\program files\\odoo 19.0.20260701\\server\\addons']) 
+2026-07-09 03:05:15,619 7452 INFO ? odoo: database: openpg@localhost:5432 
+2026-07-09 03:05:17,361 7452 INFO ? odoo.service.server: HTTP service (werkzeug) running on LAPTOP-FTKB6NRN:8069 
+2026-07-09 03:05:17,434 7452 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-09 03:05:17,493 7452 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-09 03:06:08,378 7452 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-09 03:06:08,436 7452 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-09 03:06:08,436 7452 INFO ? werkzeug: 127.0.0.1 - - [09/Jul/2026 03:06:08] "GET /odoo/vendor-bills HTTP/1.1" 303 - 0 0.000 0.108
+2026-07-09 03:06:08,486 7452 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-09 03:06:09,263 7452 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-09 03:06:09,299 7452 INFO ? werkzeug: 127.0.0.1 - - [09/Jul/2026 03:06:09] "GET /web/database/selector HTTP/1.1" 200 - 0 0.000 0.853
+2026-07-09 03:06:09,360 7452 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-09 03:06:09,364 7452 INFO ? werkzeug: 127.0.0.1 - - [09/Jul/2026 03:06:09] "GET /web/static/src/libs/fontawesome/css/font-awesome.css HTTP/1.1" 200 - 0 0.000 0.048
+2026-07-09 03:06:09,663 7452 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-09 03:06:09,663 7452 INFO ? werkzeug: 127.0.0.1 - - [09/Jul/2026 03:06:09] "GET /web/static/lib/bootstrap/dist/css/bootstrap.css HTTP/1.1" 200 - 0 0.000 0.040
+2026-07-09 03:06:09,703 7452 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-09 03:06:09,711 7452 INFO ? werkzeug: 127.0.0.1 - - [09/Jul/2026 03:06:09] "GET /web/static/lib/bootstrap/js/dist/util/index.js HTTP/1.1" 200 - 0 0.000 0.088
+2026-07-09 03:06:09,746 7452 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-09 03:06:09,746 7452 INFO ? werkzeug: 127.0.0.1 - - [09/Jul/2026 03:06:09] "GET /web/static/lib/bootstrap/js/dist/dom/data.js HTTP/1.1" 200 - 0 0.000 0.083
+2026-07-09 03:06:10,022 7452 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-09 03:06:10,028 7452 INFO ? werkzeug: 127.0.0.1 - - [09/Jul/2026 03:06:10] "GET /web/static/lib/bootstrap/js/dist/dom/event-handler.js HTTP/1.1" 200 - 0 0.000 0.047
+2026-07-09 03:06:10,071 7452 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-09 03:06:10,071 7452 INFO ? werkzeug: 127.0.0.1 - - [09/Jul/2026 03:06:10] "GET /web/static/lib/bootstrap/js/dist/dom/manipulator.js HTTP/1.1" 200 - 0 0.000 0.050
+2026-07-09 03:06:10,115 7452 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-09 03:06:10,115 7452 INFO ? werkzeug: 127.0.0.1 - - [09/Jul/2026 03:06:10] "GET /web/static/lib/bootstrap/js/dist/dom/selector-engine.js HTTP/1.1" 200 - 0 0.000 0.060
+2026-07-09 03:06:10,381 7452 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-09 03:06:10,392 7452 INFO ? werkzeug: 127.0.0.1 - - [09/Jul/2026 03:06:10] "GET /web/static/lib/bootstrap/js/dist/util/config.js HTTP/1.1" 200 - 0 0.000 0.058
+2026-07-09 03:06:10,436 7452 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-09 03:06:10,436 7452 INFO ? werkzeug: 127.0.0.1 - - [09/Jul/2026 03:06:10] "GET /web/static/lib/bootstrap/js/dist/util/component-functions.js HTTP/1.1" 200 - 0 0.000 0.055
+2026-07-09 03:06:10,495 7452 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-09 03:06:10,495 7452 INFO ? werkzeug: 127.0.0.1 - - [09/Jul/2026 03:06:10] "GET /web/static/lib/bootstrap/js/dist/util/backdrop.js HTTP/1.1" 200 - 0 0.000 0.065
+2026-07-09 03:06:10,757 7452 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-09 03:06:10,758 7452 INFO ? werkzeug: 127.0.0.1 - - [09/Jul/2026 03:06:10] "GET /web/static/lib/bootstrap/js/dist/util/focustrap.js HTTP/1.1" 200 - 0 0.000 0.059
+2026-07-09 03:06:10,812 7452 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-09 03:06:10,812 7452 INFO ? werkzeug: 127.0.0.1 - - [09/Jul/2026 03:06:10] "GET /web/static/lib/bootstrap/js/dist/util/scrollbar.js HTTP/1.1" 200 - 0 0.000 0.062
+2026-07-09 03:06:10,865 7452 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-09 03:06:10,865 7452 INFO ? werkzeug: 127.0.0.1 - - [09/Jul/2026 03:06:10] "GET /web/static/lib/bootstrap/js/dist/base-component.js HTTP/1.1" 200 - 0 0.000 0.058
+2026-07-09 03:06:11,123 7452 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-09 03:06:11,123 7452 INFO ? werkzeug: 127.0.0.1 - - [09/Jul/2026 03:06:11] "GET /web/static/lib/bootstrap/js/dist/modal.js HTTP/1.1" 200 - 0 0.000 0.057
+2026-07-09 03:06:11,182 7452 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-09 03:06:11,182 7452 INFO ? werkzeug: 127.0.0.1 - - [09/Jul/2026 03:06:11] "GET /web/static/src/public/database_manager.js HTTP/1.1" 200 - 0 0.000 0.061
+2026-07-09 03:06:11,242 7452 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-09 03:06:11,247 7452 INFO ? werkzeug: 127.0.0.1 - - [09/Jul/2026 03:06:11] "GET /web/static/img/logo2.png HTTP/1.1" 200 - 0 0.000 0.126
+2026-07-09 03:06:11,593 7452 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-09 03:06:11,595 7452 INFO ? werkzeug: 127.0.0.1 - - [09/Jul/2026 03:06:11] "GET /web/static/src/libs/fontawesome/fonts/fontawesome-webfont.woff2?v=4.7.0 HTTP/1.1" 200 - 0 0.000 0.065
+2026-07-09 03:51:51,048 7452 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-09 03:51:51,049 7452 INFO ? werkzeug: 127.0.0.1 - - [09/Jul/2026 03:51:51] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.753
+2026-07-09 03:51:54,946 7452 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-09 03:51:54,946 7452 INFO ? werkzeug: 127.0.0.1 - - [09/Jul/2026 03:51:54] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.085
+2026-07-09 03:52:00,732 7452 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-09 03:52:00,733 7452 INFO ? werkzeug: 127.0.0.1 - - [09/Jul/2026 03:52:00] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.078
+2026-07-09 03:52:09,305 7452 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-09 03:52:09,306 7452 INFO ? werkzeug: 127.0.0.1 - - [09/Jul/2026 03:52:09] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.098
+2026-07-09 03:55:16,444 7452 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-09 03:55:16,444 7452 INFO ? werkzeug: 127.0.0.1 - - [09/Jul/2026 03:55:16] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.071
+2026-07-09 03:55:19,837 7452 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-09 03:55:19,839 7452 INFO ? werkzeug: 127.0.0.1 - - [09/Jul/2026 03:55:19] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.079
+2026-07-09 03:55:25,452 7452 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-09 03:55:25,452 7452 INFO ? werkzeug: 127.0.0.1 - - [09/Jul/2026 03:55:25] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.095
+2026-07-09 03:55:33,878 7452 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-09 03:55:33,882 7452 INFO ? werkzeug: 127.0.0.1 - - [09/Jul/2026 03:55:33] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.099
+2026-07-10 02:33:20,397 7452 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-10 02:33:20,397 7452 INFO ? werkzeug: 127.0.0.1 - - [10/Jul/2026 02:33:20] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.115
+2026-07-10 02:33:23,942 7452 INFO ? odoo.sql_db: Connection to the database failed 
+2026-07-10 02:33:23,942 7452 INFO ? werkzeug: 127.0.0.1 - - [10/Jul/2026 02:33:23] "GET /websocket?version=19.0-2 HTTP/1.1" 404 - 0 0.000 0.028
