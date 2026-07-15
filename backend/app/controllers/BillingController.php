@@ -6,14 +6,14 @@ require_once __DIR__ . '/../../vendor/autoload.php';
 class BillingController extends Controller
 {
     // =======================================================
-    // 0. PENGATURAN KREDENSIAL ODOO (UBAH SESUAI ODOO ANDA!)
+    // 0. PENGATURAN KREDENSIAL ODOO
     // =======================================================
     private function getOdooConfig() {
         return [
             'url'      => "http://localhost:8069/jsonrpc",
-            'db'       => "pos_accounting", // Pastikan nama database Odoo Anda persis ini
-            'username' => "admin",          // Email / Username login Odoo
-            'apiKey'   => "admin"           // Password / API Key login Odoo
+            'db'       => "admin", 
+            'username' => "admin", 
+            'apiKey'   => "admin"  
         ];
     }
 
@@ -87,7 +87,7 @@ class BillingController extends Controller
                 if ($patientDb) $patientName = $patientDb->name;
             }
 
-            // 🚀 WAJIB BERHASIL SINKRON INVOICE ODOO SEBELUM DISIMPAN KE DB KASIR
+            // SINKRON INVOICE ODOO SEBELUM DISIMPAN
             $odooInvoiceId = $this->sendInvoiceToOdoo($invoiceNumber, $rawBody['items'], $patientName);
             
             $this->db->commit();
@@ -152,7 +152,7 @@ class BillingController extends Controller
             $billing->paid_amount = $totalPaid;
             $billing->save();
 
-            // 🚀 WAJIB BERHASIL SINKRON PAYMENT ODOO SEBELUM DISIMPAN KE DB KASIR
+            // 🚀 SINKRON PAYMENT ODOO
             $this->syncPaymentToOdoo($billing->billing_number, $payment->amount_paid, $payment->payment_method_id);
             
             $this->db->commit();
@@ -337,7 +337,7 @@ class BillingController extends Controller
     }
 
     // =======================================================
-    // 4. JARINGAN UTAMA ODOO (MENANGKAP ERROR DENGAN JELAS)
+    // 4. JARINGAN UTAMA ODOO 
     // =======================================================
     private function odooJsonRpc($url, $service, $method, $args, $kwargs = [])
     {
@@ -348,7 +348,7 @@ class BillingController extends Controller
         $context  = stream_context_create(['http' => ['header'  => "Content-Type: application/json\r\n", 'method'  => 'POST', 'content' => $payload, 'ignore_errors' => true]]);
         
         $result = file_get_contents($url, false, $context);
-        if ($result === false) throw new \Exception("Server Odoo tidak merespon (Pastikan Odoo menyala dan URL benar).");
+        if ($result === false) throw new \Exception("Server Odoo tidak merespon.");
         
         $response = json_decode($result, true);
 
@@ -396,7 +396,7 @@ class BillingController extends Controller
     }
 
     // =======================================================
-    // 6. AUTO-SYNC PEMBAYARAN KE ODOO
+    // 6. AUTO-SYNC PEMBAYARAN KE ODOO (MEMANGGIL TEMPLATE DEFAULT_GET)
     // =======================================================
     private function syncPaymentToOdoo($invoiceNumber, $amount, $paymentMethodId)
     {
@@ -404,88 +404,69 @@ class BillingController extends Controller
         $uid = $this->odooJsonRpc($config['url'], "common", "authenticate", [$config['db'], $config['username'], $config['apiKey'], []]);
         if (!$uid) throw new \Exception("Autentikasi Odoo Gagal saat memproses pembayaran.");
 
+        // 1. Cari Invoice
         $invoiceIds = $this->odooJsonRpc($config['url'], "object", "execute_kw", [$config['db'], $uid, $config['apiKey'], 'account.move', 'search', [[['ref', '=', 'POS / ' . $invoiceNumber]]]]);
-        if (empty($invoiceIds)) throw new \Exception("Referensi Invoice (POS / {$invoiceNumber}) tidak ditemukan di Odoo. Sinkronisasi Invoice sebelumnya mungkin gagal.");
+        if (empty($invoiceIds)) throw new \Exception("Referensi Invoice (POS / {$invoiceNumber}) tidak ditemukan di Odoo.");
         $invoiceId = $invoiceIds[0];
 
-        $invoiceData = $this->odooJsonRpc($config['url'], "object", "execute_kw", [$config['db'], $uid, $config['apiKey'], 'account.move', 'read', [[$invoiceId], ['state', 'partner_id']]]);
+        // 2. Baca status Invoice
+        $invoiceData = $this->odooJsonRpc($config['url'], "object", "execute_kw", [$config['db'], $uid, $config['apiKey'], 'account.move', 'read', [[$invoiceId], ['state']]]);
         $invoiceState = $invoiceData[0]['state'] ?? 'draft';
-        $partnerId = $invoiceData[0]['partner_id'][0] ?? null;
 
+        // 3. Pastikan Invoice sudah di-Post
         if ($invoiceState === 'draft') {
-            $this->odooJsonRpc($config['url'], "object", "execute_kw", [$config['db'], $uid, $config['apiKey'], 'account.move', 'action_post', [[$invoiceId]]]);
+            try {
+                $this->odooJsonRpc($config['url'], "object", "execute_kw", [$config['db'], $uid, $config['apiKey'], 'account.move', 'action_post', [[$invoiceId]]]);
+            } catch (\Exception $e) {
+                throw new \Exception("Gagal me-validasi Invoice di Odoo. Detail: " . $e->getMessage());
+            }
         }
 
+        // 4. Cari Jurnal
         $journalType = ($paymentMethodId == 1) ? 'cash' : 'bank';
-        $journalIds = $this->odooJsonRpc($config['url'], "object", "execute_kw", [
-            $config['db'], $uid, $config['apiKey'], 'account.journal', 'search', 
-            [[['type', '=', $journalType]]]
-        ]);
-
+        $journalIds = $this->odooJsonRpc($config['url'], "object", "execute_kw", [$config['db'], $uid, $config['apiKey'], 'account.journal', 'search', [[['type', '=', $journalType]]]]);
+        
         if (empty($journalIds)) {
-            $journalIds = $this->odooJsonRpc($config['url'], "object", "execute_kw", [
-                $config['db'], $uid, $config['apiKey'], 'account.journal', 'search', 
-                [[['type', 'in', ['cash', 'bank', 'general', 'sale']]]]
-            ]);
+            $journalIds = $this->odooJsonRpc($config['url'], "object", "execute_kw", [$config['db'], $uid, $config['apiKey'], 'account.journal', 'search', [[['type', 'in', ['cash', 'bank', 'general', 'sale']]]]]);
         }
-
-        if (empty($journalIds)) {
-            throw new \Exception("Tidak ada satupun Journal Akuntansi di Odoo Anda. Buat Journal tipe Bank/Cash terlebih dahulu.");
-        }
+        
+        if (empty($journalIds)) throw new \Exception("Tidak ada satupun Journal Akuntansi di Odoo Anda.");
         $journalId = $journalIds[0]; 
 
-        try {
-            $wizardArgs = [
-                'amount' => (float) $amount, 
-                'payment_date' => date('Y-m-d'),
-                'journal_id' => $journalId 
-            ];
+        // 5. MEMANGGIL DEFAULT_GET (AGAR MUNCUL DI CUSTOMER PAYMENTS)
+        $context = ['active_model' => 'account.move', 'active_ids' => [$invoiceId]];
+        
+        $wizardDefaults = $this->odooJsonRpc($config['url'], "object", "execute_kw", [
+            $config['db'], $uid, $config['apiKey'], 'account.payment.register', 'default_get',
+            [['journal_id', 'payment_method_line_id', 'amount', 'payment_date', 'communication', 'currency_id', 'payment_type', 'partner_id', 'partner_type', 'line_ids']], 
+            ['context' => $context]
+        ]);
 
+        if (!is_array($wizardDefaults)) {
+            $wizardDefaults = [];
+        }
+
+        // Menimpa nilai yang diisi kasir
+        $wizardDefaults['amount'] = (float) $amount;
+        $wizardDefaults['payment_date'] = date('Y-m-d');
+        $wizardDefaults['journal_id'] = $journalId;
+
+        // 6. Buat Pembayaran menggunakan Wizard Resmi
+        try {
             $wizardId = $this->odooJsonRpc($config['url'], "object", "execute_kw", [
                 $config['db'], $uid, $config['apiKey'], 'account.payment.register', 'create',
-                [[$wizardArgs]], ['context' => ['active_model' => 'account.move', 'active_ids' => [$invoiceId]]]
-            ]);
-
-            if ($wizardId) {
-                $this->odooJsonRpc($config['url'], "object", "execute_kw", [
-                    $config['db'], $uid, $config['apiKey'], 'account.payment.register', 'action_create_payments', [[$wizardId]]
-                ]);
-                return; 
-            }
-        } catch (\Exception $e) {
-            // Fallback jika Wizard ditolak oleh Odoo
-            if (!$partnerId) throw new \Exception("Partner ID kosong, tidak bisa melakukan fallback.");
-
-            $pmLines = $this->odooJsonRpc($config['url'], "object", "execute_kw", [
-                $config['db'], $uid, $config['apiKey'], 'account.payment.method.line', 'search', 
-                [[['payment_type', '=', 'inbound'], ['journal_id', '=', $journalId]]]
+                [[$wizardDefaults]], ['context' => $context]
             ]);
             
-            $paymentArgs = [
-                'payment_type' => 'inbound',
-                'partner_type' => 'customer',
-                'partner_id' => $partnerId,
-                'amount' => (float) $amount,
-                'date' => date('Y-m-d'),
-                'journal_id' => $journalId, 
-                'ref' => 'POS / ' . $invoiceNumber . ' (Sync Manual)'
-            ];
-
-            if (!empty($pmLines)) {
-                $paymentArgs['payment_method_line_id'] = $pmLines[0];
-            }
-
-            $paymentId = $this->odooJsonRpc($config['url'], "object", "execute_kw", [
-                $config['db'], $uid, $config['apiKey'], 'account.payment', 'create', [[$paymentArgs]]
-            ]);
-
-            if ($paymentId) {
+            if ($wizardId) {
                 $this->odooJsonRpc($config['url'], "object", "execute_kw", [
-                    $config['db'], $uid, $config['apiKey'], 'account.payment', 'action_post', [[$paymentId]]
+                    $config['db'], $uid, $config['apiKey'], 'account.payment.register', 'action_create_payments', [[$wizardId]], ['context' => $context]
                 ]);
             } else {
-                 throw new \Exception("Sistem Fallback juga gagal membuat Payment di Odoo.");
+                throw new \Exception("Gagal membuat ID Wizard Pembayaran dari Odoo.");
             }
+        } catch (\Exception $e) {
+            throw new \Exception("Wizard Pembayaran Odoo Ditolak: " . $e->getMessage());
         }
     }
 }
