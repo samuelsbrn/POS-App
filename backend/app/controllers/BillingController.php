@@ -6,14 +6,14 @@ require_once __DIR__ . '/../../vendor/autoload.php';
 class BillingController extends Controller
 {
     // =======================================================
-    // 0. PENGATURAN KREDENSIAL ODOO
+    // 0. PENGATURAN KREDENSIAL ODOO (UBAH SESUAI ODOO ANDA!)
     // =======================================================
     private function getOdooConfig() {
         return [
-            'url'      => "http://localhost:8069/jsonrpc",
-            'db'       => "admin", 
-            'username' => "admin", 
-            'apiKey'   => "admin"  
+            'url'      => "http://localhost:8069",
+            'db'       => "accounting", // Pastikan nama DB ini benar
+            'username' => "samuelsibarani2510@gmail.com", // Email / Username login Odoo
+            'apiKey'   => "odoo"  // Password login Odoo
         ];
     }
 
@@ -30,6 +30,7 @@ class BillingController extends Controller
 
         $rawBody = $this->request->getJsonRawBody(true);
 
+        // PENGECEKAN TUNGGAKAN - DIPERBARUI AGAR MENGIRIM DATA SISA TAGIHAN KE VUE
         if (!empty($rawBody['patient_id'])) {
             $unpaidBill = PatientBillings::findFirst([
                 'conditions' => 'patient_id = :pid: AND (status = "Unpaid" OR status = "Partially Paid")',
@@ -37,9 +38,20 @@ class BillingController extends Controller
             ]);
 
             if ($unpaidBill) {
+                // Hitung sisa tagihan dari pembayaran yang sudah masuk sebelumnya
+                $allPayments = BillingPayments::find(['conditions' => 'patient_billing_id = :id:', 'bind' => ['id' => $unpaidBill->id]]);
+                $totalPaid = 0;
+                foreach ($allPayments as $p) { $totalPaid += $p->amount_paid; }
+                $sisaTagihan = max(0, $unpaidBill->total_amount - $totalPaid);
+
                 return $this->response->setStatusCode(400)->setJsonContent([
                     'status'  => 'error', 
-                    'message' => 'DITOLAK: Pasien ini masih memiliki tunggakan cicilan (Nota: ' . $unpaidBill->billing_number . '). Harap lunasi tagihan sebelumnya!'
+                    'message' => 'DITOLAK: Pasien ini masih memiliki tunggakan cicilan (Nota: ' . $unpaidBill->billing_number . '). Harap lunasi tagihan sebelumnya!',
+                    'data_tunggakan' => [
+                        'patient_billing_id' => $unpaidBill->id,
+                        'invoice_number'     => $unpaidBill->billing_number,
+                        'sisa_tagihan'       => $sisaTagihan
+                    ]
                 ]);
             }
         }
@@ -87,7 +99,7 @@ class BillingController extends Controller
                 if ($patientDb) $patientName = $patientDb->name;
             }
 
-            // SINKRON INVOICE ODOO SEBELUM DISIMPAN
+            // 🚀 WAJIB BERHASIL SINKRON INVOICE ODOO SEBELUM DISIMPAN KE DB KASIR
             $odooInvoiceId = $this->sendInvoiceToOdoo($invoiceNumber, $rawBody['items'], $patientName);
             
             $this->db->commit();
@@ -152,7 +164,7 @@ class BillingController extends Controller
             $billing->paid_amount = $totalPaid;
             $billing->save();
 
-            // 🚀 SINKRON PAYMENT ODOO
+            // 🚀 WAJIB BERHASIL SINKRON PAYMENT ODOO SEBELUM DISIMPAN KE DB KASIR
             $this->syncPaymentToOdoo($billing->billing_number, $payment->amount_paid, $payment->payment_method_id);
             
             $this->db->commit();
@@ -337,7 +349,7 @@ class BillingController extends Controller
     }
 
     // =======================================================
-    // 4. JARINGAN UTAMA ODOO 
+    // 4. JARINGAN UTAMA ODOO (MENANGKAP ERROR DENGAN JELAS)
     // =======================================================
     private function odooJsonRpc($url, $service, $method, $args, $kwargs = [])
     {
@@ -348,7 +360,7 @@ class BillingController extends Controller
         $context  = stream_context_create(['http' => ['header'  => "Content-Type: application/json\r\n", 'method'  => 'POST', 'content' => $payload, 'ignore_errors' => true]]);
         
         $result = file_get_contents($url, false, $context);
-        if ($result === false) throw new \Exception("Server Odoo tidak merespon.");
+        if ($result === false) throw new \Exception("Server Odoo tidak merespon (Pastikan Odoo menyala dan URL benar).");
         
         $response = json_decode($result, true);
 
@@ -396,7 +408,7 @@ class BillingController extends Controller
     }
 
     // =======================================================
-    // 6. AUTO-SYNC PEMBAYARAN KE ODOO (MEMANGGIL TEMPLATE DEFAULT_GET)
+    // 6. AUTO-SYNC PEMBAYARAN KE ODOO (JALUR RESMI)
     // =======================================================
     private function syncPaymentToOdoo($invoiceNumber, $amount, $paymentMethodId)
     {
@@ -404,7 +416,7 @@ class BillingController extends Controller
         $uid = $this->odooJsonRpc($config['url'], "common", "authenticate", [$config['db'], $config['username'], $config['apiKey'], []]);
         if (!$uid) throw new \Exception("Autentikasi Odoo Gagal saat memproses pembayaran.");
 
-        // 1. Cari Invoice
+        // 1. Cari Invoice berdasarkan nomor referensi
         $invoiceIds = $this->odooJsonRpc($config['url'], "object", "execute_kw", [$config['db'], $uid, $config['apiKey'], 'account.move', 'search', [[['ref', '=', 'POS / ' . $invoiceNumber]]]]);
         if (empty($invoiceIds)) throw new \Exception("Referensi Invoice (POS / {$invoiceNumber}) tidak ditemukan di Odoo.");
         $invoiceId = $invoiceIds[0];
@@ -413,7 +425,7 @@ class BillingController extends Controller
         $invoiceData = $this->odooJsonRpc($config['url'], "object", "execute_kw", [$config['db'], $uid, $config['apiKey'], 'account.move', 'read', [[$invoiceId], ['state']]]);
         $invoiceState = $invoiceData[0]['state'] ?? 'draft';
 
-        // 3. Pastikan Invoice sudah di-Post
+        // 3. Pastikan Invoice sudah di-Post sebelum dibayar
         if ($invoiceState === 'draft') {
             try {
                 $this->odooJsonRpc($config['url'], "object", "execute_kw", [$config['db'], $uid, $config['apiKey'], 'account.move', 'action_post', [[$invoiceId]]]);
@@ -422,7 +434,7 @@ class BillingController extends Controller
             }
         }
 
-        // 4. Cari Jurnal
+        // 4. Cari Jurnal berdasarkan metode pembayaran
         $journalType = ($paymentMethodId == 1) ? 'cash' : 'bank';
         $journalIds = $this->odooJsonRpc($config['url'], "object", "execute_kw", [$config['db'], $uid, $config['apiKey'], 'account.journal', 'search', [[['type', '=', $journalType]]]]);
         
@@ -430,37 +442,25 @@ class BillingController extends Controller
             $journalIds = $this->odooJsonRpc($config['url'], "object", "execute_kw", [$config['db'], $uid, $config['apiKey'], 'account.journal', 'search', [[['type', 'in', ['cash', 'bank', 'general', 'sale']]]]]);
         }
         
-        if (empty($journalIds)) throw new \Exception("Tidak ada satupun Journal Akuntansi di Odoo Anda.");
+        if (empty($journalIds)) throw new \Exception("Tidak ada satupun Journal Akuntansi di Odoo Anda. Buat Journal tipe Bank/Cash terlebih dahulu.");
         $journalId = $journalIds[0]; 
 
-        // 5. MEMANGGIL DEFAULT_GET (AGAR MUNCUL DI CUSTOMER PAYMENTS)
-        $context = ['active_model' => 'account.move', 'active_ids' => [$invoiceId]];
-        
-        $wizardDefaults = $this->odooJsonRpc($config['url'], "object", "execute_kw", [
-            $config['db'], $uid, $config['apiKey'], 'account.payment.register', 'default_get',
-            [['journal_id', 'payment_method_line_id', 'amount', 'payment_date', 'communication', 'currency_id', 'payment_type', 'partner_id', 'partner_type', 'line_ids']], 
-            ['context' => $context]
-        ]);
-
-        if (!is_array($wizardDefaults)) {
-            $wizardDefaults = [];
-        }
-
-        // Menimpa nilai yang diisi kasir
-        $wizardDefaults['amount'] = (float) $amount;
-        $wizardDefaults['payment_date'] = date('Y-m-d');
-        $wizardDefaults['journal_id'] = $journalId;
-
-        // 6. Buat Pembayaran menggunakan Wizard Resmi
+        // 5. Buat Pembayaran menggunakan Wizard Resmi
         try {
+            $wizardArgs = [
+                'amount' => (float) $amount, 
+                'payment_date' => date('Y-m-d'), 
+                'journal_id' => $journalId
+            ];
+            
             $wizardId = $this->odooJsonRpc($config['url'], "object", "execute_kw", [
                 $config['db'], $uid, $config['apiKey'], 'account.payment.register', 'create',
-                [[$wizardDefaults]], ['context' => $context]
+                [[$wizardArgs]], ['context' => ['active_model' => 'account.move', 'active_ids' => [$invoiceId]]]
             ]);
             
             if ($wizardId) {
                 $this->odooJsonRpc($config['url'], "object", "execute_kw", [
-                    $config['db'], $uid, $config['apiKey'], 'account.payment.register', 'action_create_payments', [[$wizardId]], ['context' => $context]
+                    $config['db'], $uid, $config['apiKey'], 'account.payment.register', 'action_create_payments', [[$wizardId]]
                 ]);
             } else {
                 throw new \Exception("Gagal membuat ID Wizard Pembayaran dari Odoo.");
@@ -468,5 +468,54 @@ class BillingController extends Controller
         } catch (\Exception $e) {
             throw new \Exception("Wizard Pembayaran Odoo Ditolak: " . $e->getMessage());
         }
+    }
+
+    // =======================================================
+    // 7. FUNGSI UNTUK MENGECEK TUNGGAKAN PASIEN (GET)
+    // =======================================================
+    public function checkDebtAction()
+    {
+        $this->response->setContentType('application/json', 'UTF-8');
+        $patientId = $this->request->getQuery('patient_id');
+
+        if (!$patientId) {
+            return $this->response->setStatusCode(400)->setJsonContent([
+                'status' => 'error', 
+                'message' => 'Parameter patient_id diperlukan.'
+            ]);
+        }
+
+        // Cari semua nota yang statusnya Unpaid atau Partially Paid
+        $unpaidBills = PatientBillings::find([
+            'conditions' => 'patient_id = :pid: AND (status = "Unpaid" OR status = "Partially Paid")',
+            'bind'       => ['pid' => $patientId]
+        ]);
+
+        $debts = [];
+        foreach ($unpaidBills as $bill) {
+            $allPayments = BillingPayments::find(['conditions' => 'patient_billing_id = :id:', 'bind' => ['id' => $bill->id]]);
+            $totalPaid = 0;
+            foreach ($allPayments as $p) { $totalPaid += $p->amount_paid; }
+            
+            $sisaTagihan = max(0, $bill->total_amount - $totalPaid);
+            
+            if ($sisaTagihan > 0) {
+                $debts[] = [
+                    'patient_billing_id' => $bill->id,
+                    'invoice_number'     => $bill->billing_number,
+                    'total_amount'       => $bill->total_amount,
+                    'paid_amount'        => $totalPaid,
+                    'sisa_tagihan'       => $sisaTagihan,
+                    'status'             => $bill->status,
+                    'created_at'         => $bill->created_at
+                ];
+            }
+        }
+
+        return $this->response->setJsonContent([
+            'status'   => 'success',
+            'has_debt' => count($debts) > 0,
+            'data'     => $debts
+        ]);
     }
 }
