@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { usePosStore } from '../stores/posStore'
 import { storeToRefs } from 'pinia'
 
 // 1. HUBUNGKAN KE STORE
 const posStore = usePosStore()
-const { patients, products } = storeToRefs(posStore) 
+const { patients, products, showModalTunggakan, tunggakanAktif } = storeToRefs(posStore) 
 
 const patientsList = computed(() => [{ id: null, mrn: 'UMUM', name: 'Pasien Umum / Walk-in' }, ...patients.value])
 const selectedPatient = ref(patientsList.value[0])
@@ -32,7 +32,7 @@ const addToCart = (product: any) => {
 }
 
 // ==========================================
-// FITUR BARU: KONTROL KUANTITAS KERANJANG
+// KONTROL KUANTITAS KERANJANG
 // ==========================================
 const increaseQuantity = (item: any) => {
   item.qty++
@@ -42,14 +42,12 @@ const decreaseQuantity = (item: any) => {
   if (item.qty > 1) {
     item.qty--
   } else {
-    // Hapus barang jika kuantitas dikurangi saat jumlahnya 1
     cart.value = cart.value.filter(i => i.id !== item.id)
   }
 }
 
 const updateQuantity = (item: any) => {
   if (item.qty <= 0 || !item.qty) {
-    // Hapus barang jika user mengetik angka 0 atau kosong
     cart.value = cart.value.filter(i => i.id !== item.id)
   }
 }
@@ -59,7 +57,7 @@ const subtotal = computed(() => cart.value.reduce((total, item) => total + (item
 const taxAmount = computed(() => (subtotal.value * taxRate.value) / 100)
 const grandTotal = computed(() => subtotal.value + taxAmount.value - discountRp.value)
 
-// STATE PEMBAYARAN & LOKASI
+// STATE PEMBAYARAN NORMAL
 const showPaymentModal = ref(false)
 const currentBillingId = ref<number | null>(null)
 const currentInvoiceNumber = ref<string>('')
@@ -67,9 +65,27 @@ const sisaTagihan = ref(0)
 const formPayment = ref({ method_id: 1, amount: 0 })
 const currentLocation = ref({ lat: '-', lng: '-' })
 
+// STATE PELUNASAN TUNGGAKAN
+const formTunggakan = ref({ method_id: 1, amount: 0 })
+
+// OTOMATIS MENGISI NOMINAL SAAT MODAL TUNGGAKAN MUNCUL
+watch(showModalTunggakan, (isShown) => {
+  if (isShown && tunggakanAktif.value) {
+    formTunggakan.value.amount = tunggakanAktif.value.sisa_tagihan
+    formTunggakan.value.method_id = 1
+  }
+})
+
 const kembalian = computed(() => {
   if (formPayment.value.method_id === 1 && formPayment.value.amount > sisaTagihan.value) {
     return formPayment.value.amount - sisaTagihan.value
+  }
+  return 0
+})
+
+const kembalianTunggakan = computed(() => {
+  if (formTunggakan.value.method_id === 1 && tunggakanAktif.value && formTunggakan.value.amount > tunggakanAktif.value.sisa_tagihan) {
+    return formTunggakan.value.amount - tunggakanAktif.value.sisa_tagihan
   }
   return 0
 })
@@ -84,7 +100,6 @@ const showToast = (message: string, type: 'success' | 'error' | 'warning' = 'suc
   toastTimeout = setTimeout(() => { toast.value.show = false }, 4000) 
 }
 
-// LOKASI DIAM-DIAM: Ambil lokasi di background, jika gagal biarkan saja (tanpa error)
 const fetchLocation = () => {
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(
@@ -99,9 +114,8 @@ const fetchLocation = () => {
   }
 }
 
-// CETAK STRUK SPLIT BILL (REAL-TIME DI STRUK & STRUK TERPISAH BERDASARKAN URUTAN SPLIT)
 const printReceipt = (paymentData: any) => {
-  const printTime = new Date().toLocaleString('id-ID'); // Waktu Real-time saat struk dicetak
+  const printTime = new Date().toLocaleString('id-ID'); 
 
   let cartHtml = cart.value.map(item => `
     <tr>
@@ -138,7 +152,6 @@ const printReceipt = (paymentData: any) => {
         <tr><td><strong>Total Keseluruhan</strong></td><td class="text-right"><strong>Rp ${paymentData.total_tagihan.toLocaleString('id-ID')}</strong></td></tr>
       </table>
       
-      <!-- INI YANG MEMBUAT STRUK TERLIHAT BEDA UNTUK SETIAP SPLIT BILL -->
       <div class="box">
         <h3 class="text-center" style="margin: 0 0 10px 0; font-size: 13px;">BUKTI PEMBAYARAN (SPLIT KE-${paymentData.sequence})</h3>
         <table>
@@ -159,7 +172,7 @@ const printReceipt = (paymentData: any) => {
 
   const iframe = document.createElement('iframe')
   iframe.style.display = 'none'
-  iframe.id = 'print-iframe-' + Date.now(); // Pastikan ID iframe unik untuk setiap kali print
+  iframe.id = 'print-iframe-' + Date.now(); 
   document.body.appendChild(iframe)
 
   const doc = iframe.contentWindow?.document || iframe.contentDocument
@@ -174,14 +187,13 @@ const printReceipt = (paymentData: any) => {
       iframe.contentWindow.focus()
       iframe.contentWindow.print()
     }
-    // Hapus iframe setelah beberapa detik agar tidak menumpuk di memori
     setTimeout(() => { document.body.removeChild(iframe) }, 2000)
   }, 500)
 }
 
 const prosesTagihan = async () => {
   if (cart.value.length === 0) return
-  fetchLocation() // Coba perbarui lokasi saat checkout
+  fetchLocation() 
   
   const payload = {
     patient_id: selectedPatient.value.id,
@@ -199,8 +211,12 @@ const prosesTagihan = async () => {
     sisaTagihan.value = grandTotal.value
     formPayment.value.amount = sisaTagihan.value 
     showPaymentModal.value = true
-  } catch (error) {
-    showToast('Gagal membuat tagihan. Periksa koneksi server.', 'error')
+  } catch (error: any) {
+    if (error.message === 'TUNGGAKAN') {
+      showToast('⚠️ Gagal memproses! Pasien memiliki tunggakan.', 'error')
+    } else {
+      showToast('Gagal membuat tagihan. Periksa koneksi server.', 'error')
+    }
   }
 }
 
@@ -210,11 +226,9 @@ const submitPayment = async () => {
     return
   }
 
-  // Jika method Cash dan amount > sisa tagihan, gunakan sisa tagihan saja
   const uangDiakui = (formPayment.value.method_id === 1 && formPayment.value.amount > sisaTagihan.value) 
                      ? sisaTagihan.value : formPayment.value.amount
 
-  // Validasi: amount pembayaran tidak boleh lebih besar dari sisa tagihan
   if (uangDiakui > sisaTagihan.value && formPayment.value.method_id !== 1) {
     showToast('Nominal pembayaran melebihi sisa tagihan!', 'error')
     return
@@ -232,24 +246,13 @@ const submitPayment = async () => {
     const sisaBaru = dataBayar.sisa_tagihan || 0
     sisaTagihan.value = sisaBaru
 
-    // DEBUG LOG
-    console.log('📊 Payment Response:', {
-      sisa_tagihan: sisaBaru,
-      payment_status: dataBayar.payment_status,
-      amount_paid: uangDiakui,
-      total_tagihan: dataBayar.receipt?.total_tagihan
-    })
-
     if (dataBayar.receipt) {
       printReceipt(dataBayar.receipt)
     }
 
-    // CEK APAKAH SUDAH LUNAS ATAU MASIH SPLIT
     if (sisaBaru <= 0) {
-      // TRANSAKSI SELESAI - LUNAS ✅
       showToast(kembalian.value > 0 ? `✅ Pembayaran LUNAS! Kembalian: Rp ${kembalian.value.toLocaleString('id-ID')}` : '✅ Pembayaran LUNAS!', 'success')
       
-      // Tunggu 2 detik biar struk sempat di-print
       setTimeout(() => {
         showPaymentModal.value = false
         cart.value = [] 
@@ -259,25 +262,64 @@ const submitPayment = async () => {
         formPayment.value = { method_id: 1, amount: 0 }
       }, 2000)
     } else {
-      // MASIH ADA SISA - SPLIT PAYMENT 🔄
       showToast(`⚠️ Pembayaran Parsial sukses! Sisa: Rp ${sisaBaru.toLocaleString('id-ID')}`, 'warning')
-      
-      // Reset form untuk pembayaran berikutnya
       formPayment.value.method_id = 1
       formPayment.value.amount = sisaBaru
-      
-      // Beri opsi lanjut bayar vs tutup
-      console.log('🔄 Split Payment Mode - Tunggu pembayaran berikutnya')
     }
   } catch (error) {
-    console.error('Payment Error:', error)
     showToast('❌ Gagal memproses pembayaran. Cek server backend.', 'error') 
   }
 }
 
+// FUNGSI BARU: SUBMIT PELUNASAN TUNGGAKAN
+const submitPelunasan = async () => {
+  if (formTunggakan.value.amount <= 0) {
+    showToast('Nominal pelunasan harus > 0', 'error')
+    return
+  }
+
+  const sisa = tunggakanAktif.value.sisa_tagihan
+  const uangDiakui = (formTunggakan.value.method_id === 1 && formTunggakan.value.amount > sisa) 
+                     ? sisa : formTunggakan.value.amount
+
+  if (uangDiakui > sisa && formTunggakan.value.method_id !== 1) {
+    showToast('Nominal pembayaran (Non-Tunai) melebihi sisa tagihan!', 'error')
+    return
+  }
+
+  const payload = {
+    patient_billing_id: tunggakanAktif.value.patient_billing_id,
+    payment_method_id: formTunggakan.value.method_id,
+    amount_paid: uangDiakui,
+    change_amount: kembalianTunggakan.value
+  }
+
+  try {
+    const dataBayar = await posStore.prosesPembayaran(payload)
+    const sisaBaru = dataBayar.sisa_tagihan || 0
+
+    if (dataBayar.receipt) {
+      printReceipt(dataBayar.receipt) // Mencetak struk pelunasan
+    }
+
+    if (sisaBaru <= 0) {
+      showToast('✅ Tunggakan LUNAS! Silakan Checkout ulang.', 'success')
+      showModalTunggakan.value = false
+      posStore.tunggakanAktif = null
+    } else {
+      showToast(`⚠️ Pelunasan Parsial sukses! Sisa Hutang: Rp ${sisaBaru.toLocaleString('id-ID')}`, 'warning')
+      tunggakanAktif.value.sisa_tagihan = sisaBaru
+      formTunggakan.value.amount = sisaBaru
+    }
+  } catch (error) {
+    showToast('❌ Gagal melunasi tunggakan.', 'error')
+  }
+}
+
 const handleKeydown = (e: KeyboardEvent) => {
-  if (e.key === 'Escape' && showPaymentModal.value) {
-    showPaymentModal.value = false
+  if (e.key === 'Escape') {
+    if (showPaymentModal.value) showPaymentModal.value = false
+    if (showModalTunggakan.value) showModalTunggakan.value = false
   }
 }
 
@@ -301,9 +343,6 @@ onUnmounted(() => {
       <div v-if="toast.show" 
            class="fixed top-4 sm:top-6 left-1/2 transform -translate-x-1/2 z-[100] px-4 sm:px-6 py-2 sm:py-3 rounded-full shadow-2xl font-bold flex items-center gap-2 sm:gap-3 text-xs sm:text-sm tracking-wide w-11/12 sm:w-auto justify-center"
            :class="{ 'bg-teal-600 text-white': toast.type === 'success', 'bg-red-600 text-white': toast.type === 'error', 'bg-yellow-500 text-white': toast.type === 'warning' }">
-        <svg v-if="toast.type === 'success'" class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
-        <svg v-else-if="toast.type === 'error'" class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-        <svg v-else class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
         <span class="truncate">{{ toast.message }}</span>
       </div>
     </Transition>
@@ -330,9 +369,6 @@ onUnmounted(() => {
             <span class="w-1.5 sm:w-2 h-5 sm:h-6 bg-teal-500 rounded-full"></span> Farmasi & Jasa
           </h2>
           <div class="relative w-full sm:max-w-sm">
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <svg class="h-4 w-4 sm:h-5 sm:w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-            </div>
             <input v-model="searchQuery" type="text" placeholder="Cari nama / barcode..." autofocus class="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2 border-2 border-slate-200 rounded-lg sm:rounded-xl font-bold text-xs sm:text-sm focus:border-teal-500 focus:ring-0 transition-colors bg-slate-50 focus:bg-white text-slate-700">
           </div>
         </div>
@@ -358,12 +394,9 @@ onUnmounted(() => {
         <h2 class="text-lg sm:text-xl font-extrabold text-slate-800 mb-3 sm:mb-4 border-b border-slate-100 pb-3 sm:pb-4 flex-shrink-0">Rincian Tagihan</h2>
         <div class="flex-1 overflow-y-auto mb-3 sm:mb-4 space-y-2 sm:space-y-3 pr-1 sm:pr-2 custom-scrollbar">
           <div v-if="cart.length === 0" class="flex flex-col items-center justify-center h-full text-slate-400">
-            <svg class="w-10 h-10 sm:w-16 sm:h-16 mb-2 sm:mb-4 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
             <span class="font-medium text-xs sm:text-sm text-center">Keranjang masih kosong</span>
           </div>
           <div v-for="(item, index) in cart" :key="index" class="flex justify-between items-center bg-slate-50 p-2 sm:p-3 rounded-lg sm:rounded-xl border border-slate-100">
-            
-            <!-- PERUBAHAN TAMPILAN KERANJANG DI SINI -->
             <div class="flex-1 min-w-0 pr-2">
               <div class="font-bold text-slate-700 text-xs sm:text-sm truncate">{{ item.name }}</div>
               <div class="flex items-center gap-2 mt-1.5">
@@ -373,8 +406,6 @@ onUnmounted(() => {
                 <span class="text-[10px] sm:text-xs font-semibold text-slate-500 ml-1">@ Rp {{ item.price.toLocaleString('id-ID') }}</span>
               </div>
             </div>
-            <!-- AKHIR PERUBAHAN -->
-
             <div class="font-black text-slate-800 text-sm sm:text-base whitespace-nowrap">Rp {{ (item.qty * item.price).toLocaleString('id-ID') }}</div>
           </div>
         </div>
@@ -404,31 +435,25 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <!-- MODAL PEMBAYARAN -->
-    <div v-if="showPaymentModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+    <!-- MODAL PEMBAYARAN NORMAL (TIDAK BERUBAH) -->
+    <div v-if="showPaymentModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-[50] p-0 sm:p-4">
       <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden border border-slate-100 max-h-[90vh] flex flex-col">
         <div class="bg-teal-600 p-4 sm:p-5 text-center relative flex-shrink-0">
           <h3 class="text-white font-black tracking-widest uppercase text-xs sm:text-sm">Penyelesaian Pembayaran</h3>
           <button @click="showPaymentModal = false" class="absolute top-3 sm:top-4 right-4 sm:right-5 text-teal-200 hover:text-white font-black text-lg sm:text-xl">&times;</button>
         </div>
-
         <div class="p-5 sm:p-8 space-y-4 sm:space-y-6 overflow-y-auto">
-          <!-- TOTAL TAGIHAN ASLI -->
           <div class="text-center bg-slate-50 p-4 rounded-xl border border-slate-200">
             <div class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Total Tagihan Asli</div>
             <div class="text-2xl sm:text-3xl font-black text-slate-700">Rp {{ sisaTagihan.toLocaleString('id-ID') }}</div>
           </div>
-
-          <!-- SISA PEMBAYARAN (HIGHLIGHT) - Hanya muncul jika sudah ada pembayaran partial -->
           <div v-if="sisaTagihan < grandTotal" class="text-center bg-gradient-to-r from-orange-50 to-red-50 p-5 rounded-2xl border-2 border-orange-300">
             <div class="text-[10px] sm:text-xs font-bold text-orange-600 uppercase tracking-widest mb-2">⚠️ Sisa Pembayaran</div>
             <div class="text-4xl sm:text-5xl font-black text-orange-700">Rp {{ sisaTagihan.toLocaleString('id-ID') }}</div>
           </div>
-
           <div class="space-y-4 sm:space-y-5">
             <div>
               <label class="block text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5 sm:mb-2">Metode Bayar</label>
-              <!-- HANYA CASH & QRIS/DEBIT -->
               <select v-model="formPayment.method_id" class="w-full border-2 border-slate-200 rounded-lg sm:rounded-xl p-2.5 sm:p-3 font-bold text-slate-700 focus:border-teal-500 focus:ring-0 text-sm sm:text-base">
                 <option :value="1">💵 Uang Tunai (Cash)</option>
                 <option :value="2">📱 QRIS / E-Wallet</option>
@@ -443,26 +468,56 @@ onUnmounted(() => {
               <span class="font-bold text-xs sm:text-sm uppercase tracking-widest">Kembalian</span>
               <span class="font-black text-lg sm:text-xl">Rp {{ kembalian.toLocaleString('id-ID') }}</span>
             </div>
-            
-            <!-- INFO SPLIT PAYMENT JIKA BERLANGSUNG -->
-            <div v-if="sisaTagihan < (cart.reduce((sum, item) => sum + (item.price * item.qty), 0))" class="bg-blue-50 p-3 sm:p-4 rounded-xl border border-blue-200">
-              <div class="flex items-start gap-2">
-                <span class="text-lg">🔄</span>
-                <div class="text-xs sm:text-sm text-blue-700 font-bold">
-                  <div>Mode Split Payment Aktif</div>
-                  <div class="text-[10px] mt-1 opacity-75">Anda bisa melanjutkan pembayaran dengan metode berbeda</div>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
-
         <div class="p-4 sm:p-5 border-t border-slate-100 bg-slate-50 flex gap-3 sm:gap-4 flex-shrink-0">
           <button @click="showPaymentModal = false" class="w-1/3 py-3 sm:py-4 font-bold border-2 border-slate-200 rounded-xl sm:rounded-2xl bg-white text-slate-500 hover:bg-slate-50 uppercase tracking-wider text-[10px] sm:text-xs transition-colors">Tutup</button>
           <button @click="submitPayment" class="w-2/3 py-3 sm:py-4 font-black text-white bg-teal-500 hover:bg-teal-600 rounded-xl sm:rounded-2xl shadow-lg uppercase tracking-wider text-xs sm:text-sm transition-all transform active:scale-95">Konfirmasi Bayar</button>
         </div>
       </div>
     </div>
+
+    <!-- MODAL BARU: PELUNASAN TUNGGAKAN -->
+    <div v-if="showModalTunggakan" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-[60] p-0 sm:p-4">
+      <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden border-2 border-red-200 max-h-[90vh] flex flex-col">
+        <div class="bg-red-600 p-4 sm:p-5 text-center relative flex-shrink-0">
+          <h3 class="text-white font-black tracking-widest uppercase text-xs sm:text-sm">⚠️ PERHATIAN: ADA TUNGGAKAN!</h3>
+          <button @click="showModalTunggakan = false" class="absolute top-3 sm:top-4 right-4 sm:right-5 text-red-200 hover:text-white font-black text-lg sm:text-xl">&times;</button>
+        </div>
+        <div class="p-5 sm:p-8 space-y-4 sm:space-y-6 overflow-y-auto">
+          <p class="text-slate-600 text-sm text-center font-medium">Transaksi baru tidak dapat dibuat karena pasien memiliki tunggakan yang belum dilunasi pada nota <strong>{{ tunggakanAktif?.invoice_number }}</strong>.</p>
+          
+          <div class="text-center bg-red-50 p-5 rounded-2xl border border-red-200">
+            <div class="text-[10px] sm:text-xs font-bold text-red-600 uppercase tracking-widest mb-2">Sisa Tagihan Tertunggak</div>
+            <div class="text-3xl sm:text-4xl font-black text-red-700">Rp {{ tunggakanAktif?.sisa_tagihan.toLocaleString('id-ID') }}</div>
+          </div>
+
+          <div class="space-y-4 sm:space-y-5">
+            <div>
+              <label class="block text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5 sm:mb-2">Metode Pelunasan</label>
+              <select v-model="formTunggakan.method_id" class="w-full border-2 border-slate-200 rounded-lg sm:rounded-xl p-2.5 sm:p-3 font-bold text-slate-700 focus:border-red-500 focus:ring-0 text-sm sm:text-base">
+                <option :value="1">💵 Uang Tunai (Cash)</option>
+                <option :value="2">📱 QRIS / E-Wallet</option>
+                <option :value="3">💳 Kartu Debit / Kredit</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5 sm:mb-2">Nominal Diterima (Rp)</label>
+              <input type="number" v-model="formTunggakan.amount" class="w-full border-2 border-red-200 rounded-lg sm:rounded-xl p-3 sm:p-4 text-xl sm:text-2xl font-black text-slate-800 focus:border-red-500 text-center bg-red-50" @keyup.enter="submitPelunasan">
+            </div>
+            <div v-if="kembalianTunggakan > 0" class="bg-orange-50 text-orange-700 p-3 sm:p-4 rounded-lg sm:rounded-xl border border-orange-200 flex justify-between items-center transition-all">
+              <span class="font-bold text-xs sm:text-sm uppercase tracking-widest">Kembalian</span>
+              <span class="font-black text-lg sm:text-xl">Rp {{ kembalianTunggakan.toLocaleString('id-ID') }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="p-4 sm:p-5 border-t border-slate-100 bg-slate-50 flex gap-3 sm:gap-4 flex-shrink-0">
+          <button @click="showModalTunggakan = false" class="w-1/3 py-3 sm:py-4 font-bold border-2 border-slate-200 rounded-xl sm:rounded-2xl bg-white text-slate-500 hover:bg-slate-50 uppercase tracking-wider text-[10px] sm:text-xs transition-colors">Batal</button>
+          <button @click="submitPelunasan" class="w-2/3 py-3 sm:py-4 font-black text-white bg-red-600 hover:bg-red-700 rounded-xl sm:rounded-2xl shadow-lg uppercase tracking-wider text-xs sm:text-sm transition-all transform active:scale-95">Bayar Tunggakan</button>
+        </div>
+      </div>
+    </div>
+
   </main>
 </template>
 

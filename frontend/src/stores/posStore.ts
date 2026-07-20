@@ -14,6 +14,10 @@ export const usePosStore = defineStore('pos', () => {
   const isProductsLoaded = ref(false)
   const isHistoryLoaded = ref(false)
 
+  // STATE BARU: TUNGGAKAN
+  const tunggakanAktif = ref<any>(null)
+  const showModalTunggakan = ref(false)
+
   // ========================================
   // 2. FUNGSI SINKRONISASI DATA (Read)
   // ========================================
@@ -60,46 +64,71 @@ export const usePosStore = defineStore('pos', () => {
   }
 
   // ========================================
-  // 3. FUNGSI TAMBAH DATA MANUAL
+  // 3. FUNGSI TAMBAH, EDIT, HAPUS DATA (Terhubung API)
   // ========================================
-  const addPatient = (patientData: any) => {
-    const newPatient = {
-      ...patientData,
-      id: patientData.id || Date.now()
-    }
-    patients.value.push(newPatient)
-    return newPatient
-  }
-
-  const addProduct = (productData: any) => {
-    const newProduct = {
-      ...productData,
-      id: productData.id || Date.now()
-    }
-    products.value.push(newProduct)
-    return newProduct
-  }
-
-  const updatePatient = (id: number, patientData: any) => {
-    const index = patients.value.findIndex(p => p.id === id)
-    if (index !== -1) {
-      patients.value[index] = { ...patients.value[index], ...patientData }
+  const addPatient = async (patientData: any) => {
+    try {
+      // Hapus kata '/create' di akhir URL
+      const response = await axios.post('http://localhost:8000/patients', patientData)
+      await fetchPatients(true) 
+      return response.data
+    } catch (error) {
+      console.error('Gagal menambah pasien:', error)
+      throw error 
     }
   }
 
-  const updateProduct = (id: number, productData: any) => {
-    const index = products.value.findIndex(p => p.id === id)
-    if (index !== -1) {
-      products.value[index] = { ...products.value[index], ...productData }
+  const addProduct = async (productData: any) => {
+    try {
+      const response = await axios.post('http://localhost:8000/healthcare-items/create', productData)
+      await fetchProducts(true)
+      return response.data
+    } catch (error) {
+      console.error('Gagal menambah produk:', error)
+      throw error
     }
   }
 
-  const deletePatient = (id: number) => {
-    patients.value = patients.value.filter(p => p.id !== id)
+  const updatePatient = async (id: number, patientData: any) => {
+    try {
+      const response = await axios.put(`http://localhost:8000/patients/update/${id}`, patientData)
+      await fetchPatients(true)
+      return response.data
+    } catch (error) {
+      console.error('Gagal mengupdate pasien:', error)
+      throw error
+    }
   }
 
-  const deleteProduct = (id: number) => {
-    products.value = products.value.filter(p => p.id !== id)
+  const updateProduct = async (id: number, productData: any) => {
+    try {
+      const response = await axios.put(`http://localhost:8000/healthcare-items/update/${id}`, productData)
+      await fetchProducts(true)
+      return response.data
+    } catch (error) {
+      console.error('Gagal mengupdate produk:', error)
+      throw error
+    }
+  }
+
+  const deletePatient = async (id: number) => {
+    try {
+      await axios.delete(`http://localhost:8000/patients/delete/${id}`)
+      await fetchPatients(true)
+    } catch (error) {
+      console.error('Gagal menghapus pasien:', error)
+      throw error
+    }
+  }
+
+  const deleteProduct = async (id: number) => {
+    try {
+      await axios.delete(`http://localhost:8000/healthcare-items/delete/${id}`)
+      await fetchProducts(true)
+    } catch (error) {
+      console.error('Gagal menghapus produk:', error)
+      throw error
+    }
   }
 
   // ========================================
@@ -112,7 +141,16 @@ export const usePosStore = defineStore('pos', () => {
       await fetchProducts(true)
       await fetchHistory(true)
       return res.data 
-    } catch (error) {
+    } catch (error: any) {
+      // TANGKAP ERROR TUNGGAKAN DARI PHALCON
+      if (error.response && error.response.status === 400) {
+        const errorData = error.response.data
+        if (errorData.data_tunggakan) {
+          tunggakanAktif.value = errorData.data_tunggakan
+          showModalTunggakan.value = true
+          throw new Error('TUNGGAKAN')
+        }
+      }
       throw error
     }
   }
@@ -152,6 +190,8 @@ export const usePosStore = defineStore('pos', () => {
     isPatientsLoaded,
     isProductsLoaded,
     isHistoryLoaded,
+    tunggakanAktif,
+    showModalTunggakan,
     
     // Fetch Functions
     fetchPatients, 
