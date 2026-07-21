@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { usePosStore } from '../stores/posStore'
 import { storeToRefs } from 'pinia'
 import axios from 'axios'
 
-// 1. Hubungkan ke Gudang Pusat
+// 1. Hubungkan ke Gudang Pusat & Router
+const router = useRouter()
 const posStore = usePosStore()
 const { historyList, isHistoryLoaded } = storeToRefs(posStore)
 
@@ -36,7 +38,6 @@ const printReceipt = async (id: number, type: string) => {
   selectedReceipt.value = null
 
   try {
-    // Kita kirim tipe agar backend tahu ini ngambil detail Invoice atau detail Split Payment
     const response = await axios.get(`http://localhost:8000/billing/history?id=${id}&type=${type}`)
     selectedReceipt.value = response.data.data
   } catch (error) {
@@ -45,6 +46,25 @@ const printReceipt = async (id: number, type: string) => {
     showReceiptModal.value = false
   } finally {
     isLoadingReceipt.value = false 
+  }
+}
+
+// 3. FUNGSI LANJUTKAN PEMBAYARAN
+const lanjutkanPembayaran = async (id: number) => {
+  try {
+    // Tarik detail tagihan utama dari server (menggunakan type='billing' default)
+    const response = await axios.get(`http://localhost:8000/billing/history?id=${id}`)
+    const billData = response.data.data
+    
+    // Simpan ke Store dan pindahkan ke halaman POS (Kasir)
+    posStore.setActiveSplitBill(billData)
+    
+    // 👇 SUDAH DIPERBAIKI: Mengarahkan ke root URL '/' sesuai dengan file router
+    router.push('/') 
+    
+  } catch (error) {
+    console.error('Gagal mengambil data tagihan:', error)
+    alert("Terjadi kesalahan saat memuat tagihan.")
   }
 }
 
@@ -106,20 +126,31 @@ onMounted(() => {
               </td>
               <td class="p-4 text-center">
                 <span 
-                  class="px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest uppercase border"
+                  class="px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest uppercase border block mx-auto w-max"
                   :class="{
-                    'bg-green-100 text-green-700 border-green-300': inv.payment_status?.includes('Paid'),
+                    'bg-green-100 text-green-700 border-green-300': inv.payment_status?.includes('Paid') && inv.payment_status !== 'Partially Paid',
+                    'bg-yellow-100 text-yellow-700 border-yellow-300': inv.payment_status === 'Partially Paid',
                     'bg-red-100 text-red-700 border-red-300': inv.payment_status === 'Unpaid',
                     'bg-slate-100 text-slate-700 border-slate-300': inv.payment_status === 'Void'
                   }"
                 >
                   {{ inv.payment_status || 'UNKNOWN' }}
                 </span>
+                <!-- Tampilkan sisa tagihan jika statusnya partially paid / unpaid -->
+                <span v-if="inv.payment_status === 'Partially Paid' || inv.payment_status === 'Unpaid'" class="block mt-2 text-[11px] text-orange-600 font-bold">
+                  Sisa: {{ formatRp(inv.sisa_tagihan) }}
+                </span>
               </td>
-              <td class="p-4 flex justify-center">
-                <button @click="printReceipt(inv.id, inv.type)" class="bg-teal-600 hover:bg-teal-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-2 shadow-md transition-all">
+              <td class="p-4 flex justify-center gap-2">
+                <!-- Tombol Bayar Sisa -->
+                <button v-if="inv.type === 'billing' && (inv.payment_status === 'Partially Paid' || inv.payment_status === 'Unpaid')" 
+                        @click="lanjutkanPembayaran(inv.id)" 
+                        class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider shadow-sm transition-all">
+                  Bayar Sisa
+                </button>
+                <button @click="printReceipt(inv.id, inv.type)" class="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-2 shadow-sm transition-all">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                  Lihat Struk
+                  Struk
                 </button>
               </td>
             </tr>
@@ -128,10 +159,9 @@ onMounted(() => {
       </div>
     </div>
 
+    <!-- MODAL CETAK STRUK TETAP SAMA SEPERTI SEBELUMNYA -->
     <div v-if="showReceiptModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      
       <div class="bg-white p-8 rounded-sm shadow-2xl border-t-8 border-slate-800 max-w-sm w-full relative print-area overflow-y-auto max-h-[90vh]">
-        
         <button @click="showReceiptModal = false" class="absolute top-2 right-2 text-slate-300 hover:text-red-500 font-black text-2xl no-print">&times;</button>
         
         <div v-if="isLoadingReceipt" class="flex flex-col items-center py-12">
@@ -144,17 +174,13 @@ onMounted(() => {
             <h1 class="text-3xl font-black text-slate-900 tracking-widest">ZiCare POS</h1>
             <p class="text-xs text-slate-500 mt-1 font-mono uppercase tracking-wider">Klinik & Apotek</p>
           </div>
-
           <div class="border-b-2 border-dashed border-slate-300 mb-4"></div>
-
           <div class="mb-4 text-xs text-slate-700 font-mono space-y-1.5">
             <div class="flex justify-between"><span class="text-slate-500">Nota:</span> <span class="font-bold">{{ selectedReceipt.invoice_number }}</span></div>
             <div class="flex justify-between"><span class="text-slate-500">Waktu:</span> <span>{{ formatDate(selectedReceipt.created_at) }}</span></div>
             <div class="flex justify-between"><span class="text-slate-500">Pasien:</span> <span class="font-bold">{{ selectedReceipt.patient_name }}</span></div>
           </div>
-
           <div class="border-b-2 border-dashed border-slate-300 mb-4"></div>
-
           <div class="mb-4 font-mono text-xs text-slate-800 space-y-3">
             <div v-for="(item, idx) in selectedReceipt.items" :key="idx">
               <div class="font-bold">{{ item.item_name }}</div>
@@ -164,13 +190,10 @@ onMounted(() => {
               </div>
             </div>
           </div>
-
           <div class="border-b-2 border-dashed border-slate-300 mb-4"></div>
-
           <div class="flex justify-between text-lg font-black mt-3 pt-3">
             <span>TOTAL KESELURUHAN</span><span>{{ formatRp(selectedReceipt.total_tagihan_utama) }}</span>
           </div>
-
           <div v-if="selectedReceipt.is_split" class="mt-4 border-2 border-slate-800 p-4 rounded-lg bg-slate-50">
              <h3 class="text-center font-bold text-xs uppercase tracking-widest text-slate-800 mb-3">BUKTI PEMBAYARAN (SPLIT KE-{{ selectedReceipt.split_sequence }})</h3>
              <div class="space-y-1.5 text-xs font-mono text-slate-800">
@@ -182,13 +205,11 @@ onMounted(() => {
                <span>SISA TAGIHAN:</span><span>{{ formatRp(selectedReceipt.sisa_tagihan) }}</span>
              </div>
           </div>
-
           <div v-else class="text-center mt-6">
             <span class="px-5 py-2 rounded-full text-[10px] font-black tracking-widest border-2 bg-red-100 text-red-700 border-red-500">
               UNPAID / BELUM DIBAYAR
             </span>
           </div>
-
           <div class="mt-8 text-center no-print">
             <button onclick="window.print()" class="bg-teal-600 hover:bg-teal-700 text-white font-black uppercase tracking-widest py-3 px-6 rounded-xl shadow-lg w-full transition-all">
               🖨️ Cetak Struk
@@ -213,7 +234,6 @@ onMounted(() => {
   }
   .no-print { display: none !important; }
 }
-/* Mempercantik Scrollbar untuk modal pop-up */
 .overflow-y-auto::-webkit-scrollbar { width: 6px; }
 .overflow-y-auto::-webkit-scrollbar-track { background: transparent; }
 .overflow-y-auto::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }

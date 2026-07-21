@@ -5,7 +5,7 @@ import { storeToRefs } from 'pinia'
 
 // 1. HUBUNGKAN KE STORE
 const posStore = usePosStore()
-const { patients, products, showModalTunggakan, tunggakanAktif } = storeToRefs(posStore) 
+const { patients, products, showModalTunggakan, tunggakanAktif, activeSplitBill } = storeToRefs(posStore) 
 
 const patientsList = computed(() => [{ id: null, mrn: 'UMUM', name: 'Pasien Umum / Walk-in' }, ...patients.value])
 const selectedPatient = ref(patientsList.value[0])
@@ -117,12 +117,23 @@ const fetchLocation = () => {
 const printReceipt = (paymentData: any) => {
   const printTime = new Date().toLocaleString('id-ID'); 
 
-  let cartHtml = cart.value.map(item => `
-    <tr>
-      <td>${item.name}<br><small>${item.qty}x @ Rp ${item.price.toLocaleString('id-ID')}</small></td>
-      <td style="text-align: right;">Rp ${(item.qty * item.price).toLocaleString('id-ID')}</td>
-    </tr>
-  `).join('')
+  let cartHtml = ''
+  // Jika meneruskan pembayaran lama, ambil data dari state activeSplitBill
+  if (activeSplitBill.value) {
+    cartHtml = activeSplitBill.value.items.map((item: any) => `
+      <tr>
+        <td>${item.item_name}<br><small>${item.quantity}x @ Rp ${item.price.toLocaleString('id-ID')}</small></td>
+        <td style="text-align: right;">Rp ${(item.quantity * item.price).toLocaleString('id-ID')}</td>
+      </tr>
+    `).join('')
+  } else {
+    cartHtml = cart.value.map(item => `
+      <tr>
+        <td>${item.name}<br><small>${item.qty}x @ Rp ${item.price.toLocaleString('id-ID')}</small></td>
+        <td style="text-align: right;">Rp ${(item.qty * item.price).toLocaleString('id-ID')}</td>
+      </tr>
+    `).join('')
+  }
 
   const html = `
     <html>
@@ -227,7 +238,7 @@ const submitPayment = async () => {
   }
 
   const uangDiakui = (formPayment.value.method_id === 1 && formPayment.value.amount > sisaTagihan.value) 
-                     ? sisaTagihan.value : formPayment.value.amount
+                      ? sisaTagihan.value : formPayment.value.amount
 
   if (uangDiakui > sisaTagihan.value && formPayment.value.method_id !== 1) {
     showToast('Nominal pembayaran melebihi sisa tagihan!', 'error')
@@ -254,7 +265,7 @@ const submitPayment = async () => {
       showToast(kembalian.value > 0 ? `✅ Pembayaran LUNAS! Kembalian: Rp ${kembalian.value.toLocaleString('id-ID')}` : '✅ Pembayaran LUNAS!', 'success')
       
       setTimeout(() => {
-        showPaymentModal.value = false
+        closePaymentModal()
         cart.value = [] 
         taxRate.value = 0
         discountRp.value = 0
@@ -280,7 +291,7 @@ const submitPelunasan = async () => {
 
   const sisa = tunggakanAktif.value.sisa_tagihan
   const uangDiakui = (formTunggakan.value.method_id === 1 && formTunggakan.value.amount > sisa) 
-                     ? sisa : formTunggakan.value.amount
+                      ? sisa : formTunggakan.value.amount
 
   if (uangDiakui > sisa && formTunggakan.value.method_id !== 1) {
     showToast('Nominal pembayaran (Non-Tunai) melebihi sisa tagihan!', 'error')
@@ -316,9 +327,14 @@ const submitPelunasan = async () => {
   }
 }
 
+const closePaymentModal = () => {
+  showPaymentModal.value = false
+  posStore.clearActiveSplitBill() // Bersihkan jika batal melanjutkan tagihan dari history
+}
+
 const handleKeydown = (e: KeyboardEvent) => {
   if (e.key === 'Escape') {
-    if (showPaymentModal.value) showPaymentModal.value = false
+    if (showPaymentModal.value) closePaymentModal()
     if (showModalTunggakan.value) showModalTunggakan.value = false
   }
 }
@@ -329,6 +345,15 @@ onMounted(async () => {
   selectedPatient.value = patientsList.value[0]
   fetchLocation() 
   window.addEventListener('keydown', handleKeydown)
+
+  // LOGIKA LANJUTKAN TAGIHAN DARI HISTORY
+  if (activeSplitBill.value) {
+    currentBillingId.value = activeSplitBill.value.id
+    currentInvoiceNumber.value = activeSplitBill.value.invoice_number
+    sisaTagihan.value = activeSplitBill.value.sisa_tagihan
+    formPayment.value.amount = sisaTagihan.value
+    showPaymentModal.value = true
+  }
 })
 
 onUnmounted(() => {
@@ -435,20 +460,20 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <!-- MODAL PEMBAYARAN NORMAL (TIDAK BERUBAH) -->
+    <!-- MODAL PEMBAYARAN -->
     <div v-if="showPaymentModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-[50] p-0 sm:p-4">
       <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden border border-slate-100 max-h-[90vh] flex flex-col">
         <div class="bg-teal-600 p-4 sm:p-5 text-center relative flex-shrink-0">
           <h3 class="text-white font-black tracking-widest uppercase text-xs sm:text-sm">Penyelesaian Pembayaran</h3>
-          <button @click="showPaymentModal = false" class="absolute top-3 sm:top-4 right-4 sm:right-5 text-teal-200 hover:text-white font-black text-lg sm:text-xl">&times;</button>
+          <button @click="closePaymentModal" class="absolute top-3 sm:top-4 right-4 sm:right-5 text-teal-200 hover:text-white font-black text-lg sm:text-xl">&times;</button>
         </div>
         <div class="p-5 sm:p-8 space-y-4 sm:space-y-6 overflow-y-auto">
           <div class="text-center bg-slate-50 p-4 rounded-xl border border-slate-200">
             <div class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Total Tagihan Asli</div>
-            <div class="text-2xl sm:text-3xl font-black text-slate-700">Rp {{ sisaTagihan.toLocaleString('id-ID') }}</div>
+            <div class="text-2xl sm:text-3xl font-black text-slate-700">Rp {{ activeSplitBill ? activeSplitBill.total_tagihan_utama.toLocaleString('id-ID') : grandTotal.toLocaleString('id-ID') }}</div>
           </div>
-          <div v-if="sisaTagihan < grandTotal" class="text-center bg-gradient-to-r from-orange-50 to-red-50 p-5 rounded-2xl border-2 border-orange-300">
-            <div class="text-[10px] sm:text-xs font-bold text-orange-600 uppercase tracking-widest mb-2">⚠️ Sisa Pembayaran</div>
+          <div class="text-center bg-gradient-to-r from-orange-50 to-red-50 p-5 rounded-2xl border-2 border-orange-300">
+            <div class="text-[10px] sm:text-xs font-bold text-orange-600 uppercase tracking-widest mb-2">Sisa Pembayaran</div>
             <div class="text-4xl sm:text-5xl font-black text-orange-700">Rp {{ sisaTagihan.toLocaleString('id-ID') }}</div>
           </div>
           <div class="space-y-4 sm:space-y-5">
@@ -471,7 +496,7 @@ onUnmounted(() => {
           </div>
         </div>
         <div class="p-4 sm:p-5 border-t border-slate-100 bg-slate-50 flex gap-3 sm:gap-4 flex-shrink-0">
-          <button @click="showPaymentModal = false" class="w-1/3 py-3 sm:py-4 font-bold border-2 border-slate-200 rounded-xl sm:rounded-2xl bg-white text-slate-500 hover:bg-slate-50 uppercase tracking-wider text-[10px] sm:text-xs transition-colors">Tutup</button>
+          <button @click="closePaymentModal" class="w-1/3 py-3 sm:py-4 font-bold border-2 border-slate-200 rounded-xl sm:rounded-2xl bg-white text-slate-500 hover:bg-slate-50 uppercase tracking-wider text-[10px] sm:text-xs transition-colors">Tutup</button>
           <button @click="submitPayment" class="w-2/3 py-3 sm:py-4 font-black text-white bg-teal-500 hover:bg-teal-600 rounded-xl sm:rounded-2xl shadow-lg uppercase tracking-wider text-xs sm:text-sm transition-all transform active:scale-95">Konfirmasi Bayar</button>
         </div>
       </div>
@@ -517,7 +542,6 @@ onUnmounted(() => {
         </div>
       </div>
     </div>
-
   </main>
 </template>
 

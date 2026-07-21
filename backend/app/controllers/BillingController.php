@@ -241,7 +241,8 @@ class BillingController extends Controller
         $type = $this->request->getQuery('type');
 
         if (!$id) {
-            $billings = PatientBillings::find();
+            // TAMPILKAN DAFTAR SEMUA TAGIHAN UTAMA
+            $billings = PatientBillings::find(['order' => 'created_at DESC']);
             $list = [];
 
             foreach ($billings as $b) {
@@ -251,54 +252,23 @@ class BillingController extends Controller
                     if ($patient) $patientName = $patient->name;
                 }
 
-                $payments = BillingPayments::find([
-                    'conditions' => 'patient_billing_id = :id:', 
-                    'bind' => ['id' => $b->id], 
-                    'order' => 'id ASC'
-                ]);
-
-                if (count($payments) == 0) {
-                    $list[] = [
-                        'id' => $b->id,
-                        'type' => 'billing',
-                        'invoice_number' => $b->billing_number,
-                        'created_at' => $b->created_at,
-                        'patient_name' => $patientName,
-                        'total_amount' => $b->total_amount,
-                        'payment_method' => '-',
-                        'payment_status' => $b->status
-                    ];
-                } else {
-                    $seq = 1;
-                    foreach ($payments as $p) {
-                        $methodNames = [ 1 => 'Uang Tunai (Cash)', 2 => 'QRIS / E-Wallet', 3 => 'Kartu Debit / Kredit' ];
-                        $methodString = isset($methodNames[$p->payment_method_id]) ? $methodNames[$p->payment_method_id] : 'Lainnya';
-                        
-                        $list[] = [
-                            'id' => $p->id, 
-                            'type' => 'payment',
-                            'invoice_number' => $b->billing_number . '-' . $seq,
-                            'created_at' => $p->payment_date,
-                            'patient_name' => $patientName,
-                            'total_amount' => $p->amount_paid,
-                            'payment_method' => $methodString,
-                            'payment_status' => 'Paid (Split ' . $seq . ')'
-                        ];
-                        $seq++;
-                    }
-                }
+                $list[] = [
+                    'id'             => $b->id,
+                    'type'           => 'billing',
+                    'invoice_number' => $b->billing_number,
+                    'created_at'     => $b->created_at,
+                    'patient_name'   => $patientName,
+                    'total_amount'   => (float)$b->total_amount,
+                    'paid_amount'    => (float)$b->paid_amount,
+                    'sisa_tagihan'   => max(0, $b->total_amount - $b->paid_amount),
+                    'payment_status' => $b->status
+                ];
             }
-
-            usort($list, function($a, $b) {
-                $timeA = strtotime($a['created_at']);
-                $timeB = strtotime($b['created_at']);
-                if ($timeA == $timeB) return 0;
-                return ($timeA < $timeB) ? 1 : -1;
-            });
 
             return $this->response->setJsonContent(['status' => 'success', 'data' => $list]);
             
         } else {
+            // LOGIKA PENCETAKAN STRUK SPLIT PAYMENT (Dipertahankan)
             if ($type === 'payment') {
                 $payment = BillingPayments::findFirst($id);
                 if (!$payment) return $this->response->setStatusCode(404)->setJsonContent(['status' => 'error', 'message' => 'Payment tidak ditemukan.']);
@@ -326,7 +296,7 @@ class BillingController extends Controller
                     $itemKeranjang[] = [
                         'item_name' => $itemDb ? $itemDb->name : 'Item Dihapus',
                         'quantity' => $d->qty,
-                        'price' => $d->unit_price
+                        'price' => (float)$d->unit_price
                     ];
                 }
 
@@ -340,16 +310,17 @@ class BillingController extends Controller
                         'invoice_number' => $billing->billing_number . '-' . $seq,
                         'created_at' => $payment->payment_date,
                         'patient_name' => $patientName,
-                        'total_tagihan_utama' => $billing->total_amount,
+                        'total_tagihan_utama' => (float)$billing->total_amount,
                         'items' => $itemKeranjang,
                         'split_sequence' => $seq,
                         'method_name' => $methodString,
-                        'amount_paid' => $payment->amount_paid,
-                        'change_amount' => $payment->change_amount,
+                        'amount_paid' => (float)$payment->amount_paid,
+                        'change_amount' => (float)$payment->change_amount,
                         'sisa_tagihan' => $sisa
                     ]
                 ]);
             } else {
+                // LOGIKA UNTUK MEMANGGIL DETAIL TAGIHAN SAAT INGIN MELANJUTKAN PEMBAYARAN
                 $billing = PatientBillings::findFirst($id);
                 if (!$billing) return $this->response->setStatusCode(404)->setJsonContent(['status' => 'error', 'message' => 'Invoice tidak ditemukan.']);
 
@@ -366,20 +337,23 @@ class BillingController extends Controller
                     $itemKeranjang[] = [
                         'item_name' => $itemDb ? $itemDb->name : 'Item Dihapus',
                         'quantity' => $d->qty,
-                        'price' => $d->unit_price
+                        'price' => (float)$d->unit_price
                     ];
                 }
 
                 return $this->response->setJsonContent([
                     'status' => 'success',
                     'data' => [
-                        'is_split' => false,
-                        'invoice_number' => $billing->billing_number,
-                        'created_at' => $billing->created_at,
-                        'patient_name' => $patientName,
-                        'total_tagihan_utama' => $billing->total_amount,
-                        'payment_status' => $billing->status,
-                        'items' => $itemKeranjang
+                        'id'                  => $billing->id, // Penting untuk frontend
+                        'is_split'            => $billing->status === 'Partially Paid',
+                        'invoice_number'      => $billing->billing_number,
+                        'created_at'          => $billing->created_at,
+                        'patient_name'        => $patientName,
+                        'total_tagihan_utama' => (float)$billing->total_amount,
+                        'paid_amount'         => (float)$billing->paid_amount,
+                        'sisa_tagihan'        => max(0, $billing->total_amount - $billing->paid_amount), // Nilai yang harus dibayar kasir
+                        'payment_status'      => $billing->status,
+                        'items'               => $itemKeranjang
                     ]
                 ]);
             }

@@ -14,9 +14,10 @@ export const usePosStore = defineStore('pos', () => {
   const isProductsLoaded = ref(false)
   const isHistoryLoaded = ref(false)
 
-  // STATE BARU: TUNGGAKAN
+  // STATE: TUNGGAKAN & SPLIT PAYMENT
   const tunggakanAktif = ref<any>(null)
   const showModalTunggakan = ref(false)
+  const activeSplitBill = ref<any>(null)
 
   // ========================================
   // 2. FUNGSI SINKRONISASI DATA (Read)
@@ -28,7 +29,7 @@ export const usePosStore = defineStore('pos', () => {
       patients.value = response.data?.data || response.data || []
       isPatientsLoaded.value = true
     } catch (error) { 
-      console.error('API Error Patients:', error)
+      console.error('❌ API Error (Patients):', error)
       patients.value = []
     }
   }
@@ -40,7 +41,8 @@ export const usePosStore = defineStore('pos', () => {
       products.value = response.data?.data || response.data || []
       isProductsLoaded.value = true
     } catch (error) { 
-      console.error('API Error Products:', error)
+      console.error('❌ API Error (Products):', error)
+      // Fallback data kosong jika API mati
       if (products.value.length === 0) {
         products.value = [
           { id: 1, name: 'Konsultasi Dokter Umum', type: 'Jasa', category: 'jasa', price: 100000 },
@@ -58,18 +60,18 @@ export const usePosStore = defineStore('pos', () => {
       console.log('📊 History Fetched:', historyList.value.length, 'transactions')
       return historyList.value
     } catch (error) { 
-      console.error('API Error History:', error)
+      console.error('❌ API Error (History):', error)
       historyList.value = []
     }
   }
 
   // ========================================
-  // 3. FUNGSI TAMBAH, EDIT, HAPUS DATA (Terhubung API)
+  // 3. FUNGSI TAMBAH, EDIT, HAPUS DATA
   // ========================================
   const addPatient = async (patientData: any) => {
     try {
-      // Hapus kata '/create' di akhir URL
-      const response = await axios.post('http://localhost:8000/patients', patientData)
+      // Menambahkan /create agar sesuai dengan routing Phalcon
+      const response = await axios.post('http://localhost:8000/patients/create', patientData)
       await fetchPatients(true) 
       return response.data
     } catch (error) {
@@ -137,12 +139,14 @@ export const usePosStore = defineStore('pos', () => {
   const prosesCheckoutKasir = async (payloadBilling: any) => {
     try {
       const res = await axios.post('http://localhost:8000/billing/create', payloadBilling)
-      // Refresh produk & history setelah checkout
+      
+      // Auto-refresh data produk (untuk update stok) dan riwayat
       await fetchProducts(true)
       await fetchHistory(true)
+      
       return res.data 
     } catch (error: any) {
-      // TANGKAP ERROR TUNGGAKAN DARI PHALCON
+      // Tangkap penolakan khusus dari Backend jika pasien punya tunggakan
       if (error.response && error.response.status === 400) {
         const errorData = error.response.data
         if (errorData.data_tunggakan) {
@@ -157,13 +161,11 @@ export const usePosStore = defineStore('pos', () => {
 
   const prosesPembayaran = async (payloadPayment: any) => {
     try {
-      console.log('💳 Processing Payment:', payloadPayment)
+      console.log('💳 Processing Payment Payload:', payloadPayment)
       const res = await axios.post('http://localhost:8000/billing/payment', payloadPayment)
-      console.log('✅ Payment Response:', res.data)
+      console.log('✅ Payment Response Success:', res.data)
       
-      // Refresh history setelah pembayaran
       await fetchHistory(true)
-      
       return res.data
     } catch (error) {
       console.error('❌ Payment Error:', error)
@@ -172,7 +174,18 @@ export const usePosStore = defineStore('pos', () => {
   }
 
   // ========================================
-  // 5. COMPUTED PROPERTIES UNTUK QUERY
+  // 5. MANAJEMEN STATE SPLIT PAYMENT
+  // ========================================
+  const setActiveSplitBill = (billData: any) => {
+    activeSplitBill.value = billData
+  }
+  
+  const clearActiveSplitBill = () => {
+    activeSplitBill.value = null
+  }
+
+  // ========================================
+  // 6. COMPUTED PROPERTIES UNTUK QUERY
   // ========================================
   const getPatientById = computed(() => (id: number) => {
     return patients.value.find(p => p.id === id)
@@ -183,22 +196,27 @@ export const usePosStore = defineStore('pos', () => {
   })
 
   return { 
-    // State
+    // Data State
     patients, 
     products, 
     historyList,
+    
+    // Status State
     isPatientsLoaded,
     isProductsLoaded,
     isHistoryLoaded,
+    
+    // UI Modal & Transaksi State
     tunggakanAktif,
     showModalTunggakan,
+    activeSplitBill,
     
     // Fetch Functions
     fetchPatients, 
     fetchProducts, 
     fetchHistory,
     
-    // Tambah/Update/Delete Functions
+    // CRUD Functions
     addPatient,
     addProduct,
     updatePatient,
@@ -209,8 +227,10 @@ export const usePosStore = defineStore('pos', () => {
     // Transaction Functions
     prosesCheckoutKasir, 
     prosesPembayaran,
+    setActiveSplitBill,
+    clearActiveSplitBill,
     
-    // Computed
+    // Computed Getters
     getPatientById,
     getProductById
   }
